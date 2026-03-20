@@ -1,0 +1,4 @@
+interface:
+  display_name: "Volcengine Damage Analyzer"
+  short_description: "Crash damage analysis for Ark assistant"
+  default_prompt: "Use the Volcengine damage analyzer to assess impact position, visible damage, internal risk, and inspection targets."

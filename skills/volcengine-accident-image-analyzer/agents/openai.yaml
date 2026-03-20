@@ -1,0 +1,4 @@
+interface:
+  display_name: "Volcengine Accident Analyzer"
+  short_description: "Crash workflow for Volcengine Ark assistant"
+  default_prompt: "Use the Volcengine accident workflow to analyze crash images, VIN, repair parts, and procurement suggestions."

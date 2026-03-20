@@ -1,0 +1,4 @@
+interface:
+  display_name: "Volcengine Cart Builder"
+  short_description: "Cart planning for Volcengine Ark assistant"
+  default_prompt: "Use the Volcengine cart builder to turn parts recommendations into cart-ready procurement suggestions."

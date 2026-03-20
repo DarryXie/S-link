@@ -1,0 +1,4 @@
+interface:
+  display_name: "Volcengine Parts Generator"
+  short_description: "Repair parts planning for Ark assistant"
+  default_prompt: "Use the Volcengine repair parts generator to convert vehicle and damage context into a structured repair parts plan."

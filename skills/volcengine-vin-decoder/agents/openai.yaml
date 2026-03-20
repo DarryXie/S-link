@@ -1,0 +1,4 @@
+interface:
+  display_name: "Volcengine VIN Decoder"
+  short_description: "VIN decoding for Volcengine Ark assistant"
+  default_prompt: "Use the Volcengine VIN decoder to normalize VIN or VIN image input into structured vehicle information."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Volcengine Parts List Recognizer"
+  short_description: "Recognize parts list items for Ark assistant"
+  default_prompt: "Use the Volcengine parts list recognizer to extract part names and quantities from uploaded parts-list images, text, or spreadsheet rows."
