@@ -16,7 +16,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   accentOptions,
-  cartItems,
   localeOptions,
   type AccentTheme,
   type Copy,
@@ -32,6 +31,7 @@ type MainLayoutProps = {
   activePanel: PanelName;
   setActivePanel: (panel: PanelName) => void;
   copy: Copy;
+  cartCount: number;
   children: React.ReactNode;
 };
 
@@ -45,6 +45,7 @@ export function MainLayout({
   activePanel,
   setActivePanel,
   copy,
+  cartCount,
   children,
 }: MainLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -63,8 +64,6 @@ export function MainLayout({
 
     return copy.nav.dashboard;
   }, [copy.nav.dashboard, copy.nav.epc, copy.nav.orders, location.pathname]);
-
-  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
     const onPointerDown = (event: MouseEvent) => {

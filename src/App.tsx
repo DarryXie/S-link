@@ -1,10 +1,19 @@
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { appMessages, type AccentTheme, type Locale, type PanelName } from "./content";
+import {
+  appMessages,
+  cartItems,
+  type AccentTheme,
+  type Locale,
+  type PanelName,
+} from "./content";
 import { AssistantDrawer } from "./modules/assistant/AssistantDrawer";
 import { CartDrawer } from "./modules/cart/CartDrawer";
+import type { CartLine } from "./modules/cart/cartTypes";
 import { DashboardPage } from "./modules/dashboard/DashboardPage";
-import { EpcPage } from "./modules/epc/EpcPage";
+import { EpcHomePage } from "./modules/epc/EpcHomePage";
+import { EpcWizardPage } from "./modules/epc/EpcWizardPage";
+import { EpcWorkbenchPage } from "./modules/epc/EpcWorkbenchPage";
 import { MainLayout } from "./modules/layout/MainLayout";
 import { OrdersPage } from "./modules/orders/OrdersPage";
 
@@ -26,6 +35,21 @@ export default function App() {
     readStorage(accentStorageKey, "steel"),
   );
   const [activePanel, setActivePanel] = useState<PanelName>(null);
+  const [cartLines, setCartLines] = useState<CartLine[]>(() =>
+    cartItems.map((item) => ({
+      id: item.id,
+      bindingKey: `seed-${item.id}`,
+      sku: item.sku,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      name: item.name,
+      description: item.description,
+      context: {
+        "zh-CN": "演示数据 / 初始购物车",
+        "en-US": "Demo data / seeded cart",
+      },
+    })),
+  );
 
   useEffect(() => {
     window.localStorage.setItem(localeStorageKey, locale);
@@ -49,6 +73,31 @@ export default function App() {
   }, []);
 
   const copy = appMessages[locale];
+  const cartCount = cartLines.reduce((sum, item) => sum + item.quantity, 0);
+
+  function handleAddToCart(nextLine: CartLine) {
+    setCartLines((current) => {
+      const existing = current.find(
+        (item) => item.sku === nextLine.sku && item.bindingKey === nextLine.bindingKey,
+      );
+
+      if (!existing) {
+        return [nextLine, ...current];
+      }
+
+      return current.map((item) =>
+        item.id === existing.id
+          ? {
+              ...item,
+              quantity: item.quantity + nextLine.quantity,
+              description: nextLine.description,
+              context: nextLine.context,
+            }
+          : item,
+      );
+    });
+    setActivePanel("cart");
+  }
 
   return (
     <>
@@ -60,6 +109,7 @@ export default function App() {
         activePanel={activePanel}
         setActivePanel={setActivePanel}
         copy={copy}
+        cartCount={cartCount}
       >
         <Routes>
           <Route
@@ -71,7 +121,24 @@ export default function App() {
               />
             }
           />
-          <Route path="/epc" element={<EpcPage copy={copy} />} />
+          <Route
+            path="/epc"
+            element={<EpcHomePage locale={locale} />}
+          />
+          <Route
+            path="/epc/wizard"
+            element={<EpcWizardPage locale={locale} />}
+          />
+          <Route
+            path="/epc/workbench"
+            element={
+              <EpcWorkbenchPage
+                locale={locale}
+                onAddToCart={handleAddToCart}
+                onOpenCart={() => setActivePanel("cart")}
+              />
+            }
+          />
           <Route path="/orders" element={<OrdersPage copy={copy} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -87,6 +154,7 @@ export default function App() {
         copy={copy}
         isOpen={activePanel === "cart"}
         onClose={() => setActivePanel(null)}
+        items={cartLines}
       />
       {activePanel ? (
         <button
@@ -98,4 +166,3 @@ export default function App() {
     </>
   );
 }
-

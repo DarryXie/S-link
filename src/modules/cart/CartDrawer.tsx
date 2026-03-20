@@ -1,21 +1,23 @@
 import { ShoppingCart, X } from "lucide-react";
-import { cartItems, type Copy, type Locale } from "../../content";
+import type { Copy, Locale } from "../../content";
+import type { CartLine } from "./cartTypes";
 
 type CartDrawerProps = {
   locale: Locale;
   copy: Copy;
   isOpen: boolean;
   onClose: () => void;
+  items: CartLine[];
 };
 
-export function CartDrawer({ locale, copy, isOpen, onClose }: CartDrawerProps) {
+export function CartDrawer({ locale, copy, isOpen, onClose, items }: CartDrawerProps) {
   const formatter = new Intl.NumberFormat(locale, {
     style: "currency",
     currency: locale === "zh-CN" ? "CNY" : "USD",
     maximumFractionDigits: 0,
   });
 
-  const total = cartItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  const total = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 
   return (
     <aside className={`side-drawer ${isOpen ? "is-open" : ""}`} aria-hidden={!isOpen}>
@@ -31,7 +33,7 @@ export function CartDrawer({ locale, copy, isOpen, onClose }: CartDrawerProps) {
       <p className="drawer-description">{copy.cart.description}</p>
 
       <section className="drawer-section cart-list">
-        {cartItems.map((item) => (
+        {items.map((item) => (
           <article key={item.id} className="cart-item">
             <div className="cart-item-topline">
               <p>{item.name[locale]}</p>
@@ -39,6 +41,7 @@ export function CartDrawer({ locale, copy, isOpen, onClose }: CartDrawerProps) {
             </div>
             <small>{item.sku}</small>
             <span>{item.description[locale]}</span>
+            <small>{item.context[locale]}</small>
             <strong>{formatter.format(item.unitPrice * item.quantity)}</strong>
           </article>
         ))}
@@ -51,7 +54,7 @@ export function CartDrawer({ locale, copy, isOpen, onClose }: CartDrawerProps) {
         </div>
         <div className="summary-row">
           <span>
-            {cartItems.length} {copy.common.records}
+            {items.length} {copy.common.records}
           </span>
           <strong>{formatter.format(total)}</strong>
         </div>
@@ -66,4 +69,3 @@ export function CartDrawer({ locale, copy, isOpen, onClose }: CartDrawerProps) {
     </aside>
   );
 }
-
