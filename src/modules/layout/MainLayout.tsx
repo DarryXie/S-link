@@ -86,6 +86,7 @@ export function MainLayout({
     { to: "/epc", label: copy.nav.epc, icon: BookOpen, caption: "02" },
     { to: "/orders", label: copy.nav.orders, icon: ShoppingBag, caption: "03" },
   ];
+  const isEpcRoute = location.pathname.startsWith("/epc");
 
   return (
     <div className="shell">
@@ -245,7 +246,7 @@ export function MainLayout({
           </div>
         </header>
 
-        <main className="workspace">{children}</main>
+        <main className={`workspace ${isEpcRoute ? "is-epc-workspace" : ""}`}>{children}</main>
       </div>
 
       {isSidebarOpen ? (

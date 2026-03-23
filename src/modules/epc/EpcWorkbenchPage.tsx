@@ -2,6 +2,7 @@ import {
   ArrowRight,
   Boxes,
   Check,
+  ChevronRight,
   Image as ImageIcon,
   Minus,
   Plus,
@@ -45,6 +46,7 @@ export function EpcWorkbenchPage({
   const ui = pageCopy[locale];
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
   const [searchParams] = useSearchParams();
+  const entryVin = searchParams.get("vin") ?? "";
   const navigate = useNavigate();
   const {
     activePartId,
@@ -173,20 +175,52 @@ export function EpcWorkbenchPage({
     partHits.find(({ part }) => part.id === partDetailId)?.part ??
     null;
 
+  const vehicleContextLabel = [
+    entryVin,
+    getText(locale, currentVehicle.brand),
+    getText(locale, currentVehicle.series),
+    currentVehicle.year,
+    getText(locale, currentVehicle.model),
+  ]
+    .filter(Boolean)
+    .join(" / ");
+
+  const breadcrumbItems = [
+    { label: ui.breadcrumbHome, onClick: () => navigate("/epc") },
+    { label: vehicleContextLabel },
+  ];
+
   return (
     <div className="page-stack epc-page">
       <div className="epc-subpage-bar reveal">
         <EpcBackButton
-          fallbackTo={buildEpcPath("/epc/wizard", {
-            vehicleId: currentVehicle.id,
-            groupId: currentGroup.id,
-            subgroupId: currentSubgroup.id,
-            diagramId: currentDiagram.id,
-            partId: activePartId,
-          })}
+          fallbackTo={buildEpcPath(
+            "/epc/groups",
+            {
+              vehicleId: currentVehicle.id,
+              groupId: currentGroup.id,
+              subgroupId: currentSubgroup.id,
+              diagramId: currentDiagram.id,
+              partId: activePartId,
+            },
+            entryVin ? { vin: entryVin } : undefined,
+          )}
           label={locale === "zh-CN" ? "返回查询向导" : "Back to guide"}
         />
-        <span className="status-pill">EPC</span>
+        <section className="epc-breadcrumbs" aria-label="breadcrumbs">
+          {breadcrumbItems.map((item, index) => (
+            <div key={`${item.label}-${index}`} className="epc-breadcrumb-item">
+              {"onClick" in item ? (
+                <button type="button" onClick={item.onClick}>
+                  {item.label}
+                </button>
+              ) : (
+                <span>{item.label}</span>
+              )}
+              {index < breadcrumbItems.length - 1 ? <ChevronRight size={14} /> : null}
+            </div>
+          ))}
+        </section>
       </div>
 
       <section className="epc-workbench reveal delay-2">

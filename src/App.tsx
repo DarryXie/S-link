@@ -11,6 +11,7 @@ import { AssistantDrawer } from "./modules/assistant/AssistantDrawer";
 import { CartDrawer } from "./modules/cart/CartDrawer";
 import type { CartLine } from "./modules/cart/cartTypes";
 import { DashboardPage } from "./modules/dashboard/DashboardPage";
+import { EpcGroupPage } from "./modules/epc/EpcGroupPage";
 import { EpcHomePage } from "./modules/epc/EpcHomePage";
 import { EpcWizardPage } from "./modules/epc/EpcWizardPage";
 import { EpcWorkbenchPage } from "./modules/epc/EpcWorkbenchPage";
@@ -128,6 +129,10 @@ export default function App() {
           <Route
             path="/epc/wizard"
             element={<EpcWizardPage locale={locale} />}
+          />
+          <Route
+            path="/epc/groups"
+            element={<EpcGroupPage locale={locale} />}
           />
           <Route
             path="/epc/workbench"

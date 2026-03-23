@@ -726,7 +726,7 @@ export function resolveSelectionFromIds(input?: Partial<SelectionIds>) {
 }
 
 export function buildEpcPath(
-  pathname: "/epc/wizard" | "/epc/workbench",
+  pathname: "/epc/wizard" | "/epc/groups" | "/epc/workbench",
   input: Partial<SelectionIds>,
   extra?: Record<string, string>,
 ) {
@@ -1549,7 +1549,6 @@ export function EpcPage({
     <div className="page-stack epc-page">
       <div className="epc-subpage-bar reveal">
         <EpcBackButton fallbackTo={backFallback} label={backLabel} />
-        <span className="status-pill">EPC</span>
       </div>
 
       {isHomeView ? (

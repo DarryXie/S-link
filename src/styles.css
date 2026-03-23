@@ -486,9 +486,23 @@ button {
   min-height: 0;
 }
 
+.workspace.is-epc-workspace {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.workspace.is-epc-workspace > .epc-page {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
 .page-stack {
   display: grid;
   gap: 1.3rem;
+  align-content: start;
 }
 
 .hero-panel,
@@ -918,13 +932,34 @@ button {
 }
 
 .epc-page {
+  display: grid;
+  align-content: start;
   position: relative;
+}
+
+.epc-home-page {
+  gap: 1rem;
+}
+
+.epc-home-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  column-gap: 1rem;
+  align-items: stretch;
+  height: 100%;
+  min-height: 0;
+}
+
+.epc-home-main {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-height: 0;
 }
 
 .epc-subpage-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
 }
 
@@ -939,7 +974,7 @@ button {
 .epc-hero,
 .epc-guide-panel,
 .epc-workbench,
-.epc-brand-board,
+.epc-home-catalog-panel,
 .epc-history-rail {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -964,6 +999,14 @@ button {
 .epc-hero {
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.75fr);
   padding: clamp(1.5rem, 3vw, 2.4rem);
+}
+
+.epc-home-intro {
+  padding: 0;
+}
+
+.epc-home-hero-copy {
+  max-width: 40rem;
 }
 
 .epc-hero-copy h2 {
@@ -1059,15 +1102,33 @@ button {
   font-weight: 600;
 }
 
-.epc-home-grid {
-  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
-}
-
-.epc-brand-board,
+.epc-home-catalog-panel,
 .epc-history-rail,
 .epc-guide-panel,
 .epc-workbench {
   padding: 1.3rem;
+}
+
+.epc-workbench {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+
+.epc-history-rail {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-self: stretch;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+}
+
+.epc-history-head {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.8rem;
 }
 
 .brand-matrix,
@@ -1081,13 +1142,83 @@ button {
   gap: 0.8rem;
 }
 
+.epc-history-list {
+  overflow: auto;
+  padding-right: 0.35rem;
+}
+
+.epc-home-catalog-panel .epc-search-box {
+  margin-top: 0;
+  background: color-mix(in oklch, white 68%, var(--brand-soft) 32%);
+  border-color: color-mix(in oklch, var(--brand) 28%, white 72%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.55);
+}
+
+.epc-home-catalog-panel .epc-search-box:focus-within {
+  background: color-mix(in oklch, white 60%, var(--brand-soft) 40%);
+  border-color: color-mix(in oklch, var(--brand) 42%, white 58%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 0 0 4px color-mix(in oklch, var(--brand-soft) 42%, transparent);
+}
+
+.epc-search-assist {
+  margin-top: 0.55rem;
+}
+
+.epc-search-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.epc-paste-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid color-mix(in oklch, var(--brand) 18%, transparent);
+  border-radius: 18px;
+  padding: 0.55rem 0.7rem 0.55rem 0.8rem;
+  background: color-mix(in oklch, white 80%, var(--brand-soft) 20%);
+}
+
+.epc-paste-chip-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  color: color-mix(in oklch, var(--brand) 80%, black 20%);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.epc-paste-chip-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.epc-paste-chip-clear {
+  flex: none;
+  height: 1.9rem;
+  width: 1.9rem;
+}
+
+.epc-home-catalog-panel .brand-matrix {
+  margin-top: 0.6rem;
+}
+
 .brand-matrix {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(128px, 148px));
+  justify-content: start;
 }
 
 .brand-card,
 .history-card,
 .epc-model-card,
+.epc-vehicle-model-card,
 .epc-stack-button,
 .epc-diagram-card {
   border: 1px solid var(--line);
@@ -1104,6 +1235,7 @@ button {
 .brand-card:hover,
 .history-card:hover,
 .epc-model-card:hover,
+.epc-vehicle-model-card:hover,
 .epc-stack-button:hover,
 .epc-diagram-card:hover,
 .parts-table tbody tr:hover {
@@ -1111,8 +1243,14 @@ button {
   border-color: color-mix(in oklch, var(--brand) 28%, transparent);
 }
 
+.brand-card:hover {
+  background: color-mix(in oklch, var(--brand) 11%, white 89%);
+  border-color: color-mix(in oklch, var(--brand) 30%, transparent);
+}
+
 .brand-card.is-active,
 .epc-model-card.is-active,
+.epc-vehicle-model-card.is-active,
 .epc-stack-button.is-active,
 .epc-diagram-card.is-active {
   background: color-mix(in oklch, var(--brand) 11%, white 89%);
@@ -1121,25 +1259,51 @@ button {
 
 .brand-card {
   display: grid;
-  gap: 0.75rem;
-  padding: 1rem;
+  justify-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  max-width: 148px;
+  min-height: 148px;
+  padding: 1rem 0.8rem;
+  text-align: center;
+  box-shadow: none;
 }
 
 .brand-card-mark {
   display: grid;
-  height: 2.8rem;
-  width: 2.8rem;
+  height: 4.5rem;
+  width: 4.5rem;
   place-items: center;
-  border-radius: 18px;
+  border-radius: 22px;
   background: color-mix(in oklch, var(--brand) 18%, transparent);
   font-family: "Space Grotesk", sans-serif;
+  font-size: 1.35rem;
   font-weight: 700;
 }
 
 .history-card {
   display: grid;
-  gap: 0.5rem;
-  padding: 1rem;
+  grid-template-rows: auto minmax(0, 1.8rem) minmax(0, 3rem);
+  align-content: start;
+  gap: 0.45rem;
+  min-height: 8.4rem;
+  padding: 0.85rem 0.95rem;
+}
+
+.history-card strong {
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.history-card p {
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .epc-breadcrumbs {
@@ -1147,6 +1311,7 @@ button {
   flex-wrap: wrap;
   gap: 0.55rem;
   align-items: center;
+  min-width: 0;
   padding-inline: 0.2rem;
 }
 
@@ -1154,18 +1319,34 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  min-width: 0;
 }
 
-.epc-breadcrumb-item button {
+.epc-breadcrumb-item button,
+.epc-breadcrumb-item span {
+  min-width: 0;
   border: 0;
   padding: 0;
   background: transparent;
   color: var(--muted);
+  line-height: 1.5;
+}
+
+.epc-breadcrumb-item button {
+  cursor: pointer;
 }
 
 .epc-breadcrumb-item:last-child button,
+.epc-breadcrumb-item:last-child span,
 .epc-breadcrumb-item button:hover {
   color: var(--text);
+}
+
+.epc-breadcrumb-item:last-child span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
 }
 
 .epc-guide {
@@ -1200,6 +1381,7 @@ button {
 }
 
 .epc-model-card,
+.epc-vehicle-model-card,
 .epc-stack-button,
 .epc-diagram-card {
   display: flex;
@@ -1249,17 +1431,406 @@ button {
   font-size: 1.5rem;
 }
 
+.epc-vehicle-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+  height: 100%;
+  min-height: 0;
+}
+
+.epc-vehicle-layout.is-selector-open {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 388px);
+}
+
+.epc-vehicle-board,
+.epc-vehicle-selector {
+  border-radius: 30px;
+  padding: 1rem;
+  background: color-mix(in oklch, white 64%, transparent);
+  border: 1px solid color-mix(in oklch, var(--brand) 14%, transparent);
+  min-height: 0;
+}
+
+.epc-vehicle-board {
+  height: 100%;
+}
+
+.epc-vehicle-head,
+.epc-vehicle-selector-head {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.epc-vehicle-head > p {
+  margin: 0;
+  max-width: 20rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.epc-vehicle-head h3,
+.epc-vehicle-selector-head h3,
+.epc-column-head h4 {
+  margin: 0.28rem 0 0;
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.epc-vehicle-head h3 {
+  font-size: 1.55rem;
+  margin-top: 0;
+}
+
+.epc-vehicle-selector-head h3,
+.epc-column-head h4 {
+  font-size: 1.15rem;
+}
+
+.epc-series-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 1rem;
+  margin-top: 1.1rem;
+}
+
+.epc-series-card,
+.epc-year-chip {
+  border: 1px solid color-mix(in oklch, var(--brand) 16%, transparent);
+  background: color-mix(in oklch, white 70%, transparent);
+  color: inherit;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.epc-series-card {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+  min-height: 8rem;
+  padding: 1rem;
+}
+
+.epc-series-card span {
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.epc-series-card:hover,
+.epc-series-card.is-active,
+.epc-year-chip:hover,
+.epc-year-chip.is-active {
+  transform: translateY(-1px);
+  border-color: color-mix(in oklch, var(--brand) 30%, transparent);
+  background: color-mix(in oklch, var(--brand) 10%, white 90%);
+}
+
+.epc-vehicle-selector {
+  display: grid;
+  gap: 1rem;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+}
+
+.epc-year-panel {
+  display: grid;
+  gap: 0.8rem;
+  align-content: start;
+}
+
+.epc-year-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid color-mix(in oklch, var(--brand) 14%, transparent);
+}
+
+.epc-year-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.88rem;
+}
+
+.epc-model-panel {
+  display: grid;
+  gap: 0.8rem;
+  align-content: start;
+}
+
+.epc-vehicle-model-list {
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
+}
+
+.epc-vehicle-model-card {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.7rem 0.85rem;
+}
+
+.epc-vehicle-model-card div {
+  display: grid;
+  gap: 0.08rem;
+}
+
+.epc-vehicle-model-card strong,
+.epc-vehicle-model-card small {
+  margin: 0;
+}
+
+.epc-vehicle-model-card strong {
+  line-height: 1.2;
+}
+
+.epc-vehicle-model-card small {
+  line-height: 1.2;
+}
+
+.epc-vehicle-selector-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+}
+
+.epc-vehicle-next {
+  min-height: 3rem;
+}
+
+.epc-group-page {
+  display: grid;
+  gap: 0;
+  grid-template-rows: minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+
+.epc-group-page-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.7fr);
+  gap: 1rem;
+  min-height: 0;
+  height: 100%;
+}
+
+.epc-group-tree-panel,
+.epc-group-diagram-panel {
+  display: grid;
+  align-content: start;
+  gap: 0.9rem;
+  border-radius: 26px;
+  padding: 1rem;
+  height: 100%;
+  min-height: 0;
+  background: color-mix(in oklch, white 64%, transparent);
+  border: 1px solid color-mix(in oklch, var(--brand) 12%, transparent);
+}
+
+.epc-column-head {
+  display: grid;
+  gap: 0.18rem;
+  align-content: start;
+}
+
+.epc-column-head h4,
+.epc-column-head .section-kicker {
+  margin: 0;
+}
+
+.epc-group-tree-scroll,
+.epc-group-diagram-scroll {
+  display: grid;
+  align-content: start;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 0.35rem;
+}
+
+.epc-group-tree-section {
+  display: grid;
+  align-content: start;
+}
+
+.epc-group-tree-parent,
+.epc-group-tree-child {
+  width: 100%;
+  border: 1px solid color-mix(in oklch, var(--brand) 14%, transparent);
+  background: color-mix(in oklch, white 72%, transparent);
+  color: inherit;
+  text-align: left;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.epc-group-tree-parent {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  justify-content: flex-start;
+  min-height: 3rem;
+  padding: 0.8rem 1rem;
+  background: color-mix(in oklch, var(--brand) 6%, white 94%);
+}
+
+.epc-group-tree-children {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  transition: grid-template-rows 180ms ease;
+}
+
+.epc-group-tree-children.is-open {
+  grid-template-rows: 1fr;
+}
+
+.epc-group-tree-children.is-open > .epc-group-tree-children-inner,
+.epc-group-tree-children > .epc-group-tree-children-inner {
+  min-height: 0;
+}
+
+.epc-group-tree-children-inner {
+  display: grid;
+  overflow: hidden;
+}
+
+.epc-group-tree-child {
+  display: grid;
+  align-items: center;
+  min-height: 2.8rem;
+  padding: 0.7rem 1rem 0.7rem 2.95rem;
+  border-top: 0;
+}
+
+.epc-group-tree-caret {
+  margin-left: auto;
+  color: var(--muted);
+  transition: transform 180ms ease;
+}
+
+.epc-group-tree-caret.is-open {
+  transform: rotate(180deg);
+}
+
+.epc-group-tree-parent:hover,
+.epc-group-tree-child:hover,
+.epc-group-tree-parent.is-active,
+.epc-group-tree-child.is-active {
+  transform: translateY(-1px);
+  border-color: color-mix(in oklch, var(--brand) 28%, transparent);
+  background: color-mix(in oklch, var(--brand) 10%, white 90%);
+}
+
+.epc-group-diagram-panel {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.epc-group-diagram-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 1.25rem 1rem;
+  align-content: start;
+}
+
+.epc-group-diagram-tile {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: center;
+}
+
+.epc-group-diagram-frame {
+  display: grid;
+  place-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  aspect-ratio: 0.9 / 1;
+  border: 1px solid color-mix(in oklch, var(--brand) 18%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in oklch, white 74%, transparent), color-mix(in oklch, white 90%, transparent)),
+    radial-gradient(circle at top, color-mix(in oklch, var(--brand) 12%, transparent), transparent 56%);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.epc-group-diagram-frame span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.epc-group-diagram-copy {
+  width: 100%;
+}
+
+.epc-group-diagram-copy strong {
+  display: block;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.epc-group-diagram-tile:hover .epc-group-diagram-frame,
+.epc-group-diagram-tile.is-active .epc-group-diagram-frame {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklch, var(--brand) 30%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--brand) 8%, white 92%), color-mix(in oklch, white 94%, transparent)),
+    radial-gradient(circle at top, color-mix(in oklch, var(--brand) 16%, transparent), transparent 56%);
+}
+
+.epc-group-diagram-tile.is-active .epc-group-diagram-copy strong {
+  color: color-mix(in oklch, var(--brand) 82%, black 18%);
+}
+
+.epc-group-diagram-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+}
+
+.epc-group-next {
+  min-height: 3rem;
+}
+
 .epc-workbench-grid {
   grid-template-columns: minmax(340px, 0.95fr) minmax(0, 1.25fr);
   margin-top: 1rem;
+  height: 100%;
+  min-height: 0;
 }
 
 .diagram-stage,
 .parts-table-shell {
+  display: grid;
   border-radius: 28px;
   padding: 1rem;
+  min-height: 0;
   background: color-mix(in oklch, white 64%, transparent);
   border: 1px solid color-mix(in oklch, var(--brand) 14%, transparent);
+}
+
+.diagram-stage {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.parts-table-shell {
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .diagram-stage-head {
@@ -1333,6 +1904,7 @@ button {
 }
 
 .parts-table-scroll {
+  min-height: 0;
   overflow: auto;
 }
 
@@ -1623,8 +2195,10 @@ button {
   .epc-layout,
   .orders-layout,
   .epc-hero,
-  .epc-home-grid,
+  .epc-home-shell,
   .epc-guide,
+  .epc-vehicle-layout,
+  .epc-group-page-grid,
   .epc-workbench-grid {
     grid-template-columns: 1fr;
   }
@@ -1689,8 +2263,28 @@ button {
     display: none;
   }
 
+  .epc-subpage-bar {
+    flex-wrap: wrap;
+    align-items: start;
+  }
+
   .epc-breadcrumbs {
     gap: 0.35rem;
+  }
+
+  .epc-vehicle-head,
+  .epc-vehicle-selector-head {
+    display: grid;
+  }
+
+  .epc-year-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .epc-group-tree-panel,
+  .epc-group-diagram-panel {
+    min-height: auto;
+    height: auto;
   }
 
   .part-gallery,
