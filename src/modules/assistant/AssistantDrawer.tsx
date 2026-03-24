@@ -1594,17 +1594,15 @@ export function AssistantDrawer({
           <p className="assistant-card-note">{message.hint[locale]}</p>
           {activeSession?.stage === "awaiting-vehicle-confirm" ? (
             <div className="assistant-card-actions">
-              {activeSession.flow === "epc" ? (
-                <button
-                  type="button"
-                  className="secondary-action"
-                  onClick={() => navigate(resolveVehiclePreviewLink(activeSession))}
-                  disabled={activeIsBusy}
-                >
-                  <ArrowUpRight size={14} />
-                  {makeText(locale, "预览 EPC", "Preview EPC")}
-                </button>
-              ) : null}
+              <button
+                type="button"
+                className="secondary-action"
+                onClick={() => navigate(resolveVehiclePreviewLink(activeSession))}
+                disabled={activeIsBusy}
+              >
+                <ArrowUpRight size={14} />
+                {makeText(locale, "预览 EPC", "Preview EPC")}
+              </button>
               <button type="button" className="secondary-action" onClick={handleResetVehicle} disabled={activeIsBusy}>{makeText(locale, "重新输入", "Re-enter")}</button>
               <button type="button" className="primary-action" onClick={() => void handleConfirmVehicle()} disabled={activeIsBusy}>{makeText(locale, "确认车型", "Confirm")}</button>
             </div>
