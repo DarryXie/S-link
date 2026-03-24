@@ -4,11 +4,13 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Locale } from "../../content";
 import {
   EpcBackButton,
+  buildVehicleContextLabel,
   buildEpcPath,
   getText,
   pageCopy,
   useEpcSelectionState,
 } from "./EpcPage";
+import { useEpcHeader } from "./epcHeaderContext";
 
 type EpcWizardPageProps = {
   locale: Locale;
@@ -40,28 +42,25 @@ export function EpcWizardPage({ locale }: EpcWizardPageProps) {
     [currentVehicle.brandId, seriesOptions],
   );
 
-  const vehicleContextLabel = [
-    entryVin,
-    getText(locale, currentVehicle.brand),
-    getText(locale, currentVehicle.series),
-    currentVehicle.year,
-    getText(locale, currentVehicle.model),
-  ]
-    .filter(Boolean)
-    .join(" / ");
+  const vehicleContextLabel = buildVehicleContextLabel(locale, currentVehicle, entryVin);
 
   const breadcrumbItems = [
     { label: ui.breadcrumbHome, onClick: () => navigate("/epc") },
     { label: vehicleContextLabel },
   ];
+  const headerConfig = useMemo(
+    () => ({
+      backFallbackTo: "/epc",
+      backLabel: locale === "zh-CN" ? "返回 EPC 首页" : "Back to EPC home",
+      breadcrumbs: [{ label: vehicleContextLabel }],
+    }),
+    [locale, vehicleContextLabel],
+  );
 
   const nextStepLabel =
     locale === "zh-CN" ? "下一步，选择分组与图例" : "Next, choose group and diagram";
-  const pageHint =
-    locale === "zh-CN"
-      ? "选择车系后，从右侧继续选择年款与车型。"
-      : "Choose a series, then continue with year and model on the right.";
   const yearLabel = locale === "zh-CN" ? "年款" : "Year";
+  useEpcHeader(headerConfig);
 
   return (
     <div className="page-stack epc-page">
@@ -94,12 +93,12 @@ export function EpcWizardPage({ locale }: EpcWizardPageProps) {
             <div>
               <h3>{getText(locale, currentVehicle.brand)}</h3>
             </div>
-            <p>{pageHint}</p>
           </div>
 
           <div className="epc-series-grid">
             {currentBrandSeries.map((seriesVehicle) => {
               const isActive = currentVehicle.seriesId === seriesVehicle.seriesId && isSelectorOpen;
+              const seriesLabel = getText(locale, seriesVehicle.series);
 
               return (
                 <button
@@ -111,7 +110,12 @@ export function EpcWizardPage({ locale }: EpcWizardPageProps) {
                     setIsSelectorOpen(true);
                   }}
                 >
-                  <span>{getText(locale, seriesVehicle.series)}</span>
+                  <div className="epc-series-card-media" aria-hidden="true">
+                    <CarFront size={30} strokeWidth={1.9} />
+                  </div>
+                  <div className="epc-series-card-copy">
+                    <strong>{seriesLabel}</strong>
+                  </div>
                 </button>
               );
             })}

@@ -8,16 +8,18 @@
   --swatch-teal: oklch(0.63 0.1 195);
   --brand: var(--swatch-steel);
   --brand-soft: color-mix(in oklch, var(--brand) 15%, oklch(0.97 0.01 85));
-  --bg: oklch(0.965 0.01 85);
-  --surface: oklch(0.985 0.005 85 / 0.88);
-  --surface-strong: oklch(0.96 0.007 85 / 0.92);
+  --bg: #fff;
+  --surface: #fff;
+  --surface-strong: #fff;
+  --section-surface: color-mix(in oklch, white 97%, var(--brand) 3%);
+  --section-surface-strong: color-mix(in oklch, white 95%, var(--brand) 5%);
   --panel: oklch(0.22 0.015 250);
   --text: oklch(0.26 0.02 250);
   --muted: oklch(0.52 0.015 250);
   --line: color-mix(in oklch, var(--text) 12%, transparent);
-  --shadow: 0 24px 64px color-mix(in oklch, var(--panel) 12%, transparent);
-  --radius-lg: 32px;
-  --radius-md: 22px;
+  --shadow: none;
+  --radius-lg: 16px;
+  --radius-md: 11px;
   --toolbar-height: 48px;
 }
 
@@ -43,10 +45,7 @@ body,
 
 body {
   overflow: hidden;
-  background:
-    radial-gradient(circle at top left, color-mix(in oklch, var(--brand) 12%, transparent), transparent 28%),
-    radial-gradient(circle at 100% 20%, oklch(0.92 0.02 85), transparent 30%),
-    linear-gradient(180deg, oklch(0.985 0.006 85), var(--bg));
+  background: var(--bg);
   color: var(--text);
 }
 
@@ -55,12 +54,10 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background-image:
-    linear-gradient(color-mix(in oklch, var(--text) 4%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklch, var(--text) 4%, transparent) 1px, transparent 1px);
+  background-image: none;
   background-size: 56px 56px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.65), transparent 70%);
-  opacity: 0.55;
+  mask-image: none;
+  opacity: 0;
 }
 
 a,
@@ -89,9 +86,7 @@ button {
   align-items: center;
   gap: 1.5rem;
   padding: 1.5rem 0.85rem;
-  background:
-    linear-gradient(180deg, color-mix(in oklch, var(--panel) 94%, var(--brand) 6%), var(--panel)),
-    var(--panel);
+  background: var(--panel);
   color: oklch(0.94 0.01 240);
 }
 
@@ -137,9 +132,8 @@ button {
   height: 56px;
   width: 56px;
   place-items: center;
-  border-radius: 18px;
-  background:
-    linear-gradient(160deg, color-mix(in oklch, var(--brand) 65%, white 35%), color-mix(in oklch, var(--brand) 35%, black 65%));
+  border-radius: 9px;
+  background: var(--brand);
   color: white;
   font-family: "Space Grotesk", sans-serif;
   font-size: 1.05rem;
@@ -251,7 +245,7 @@ button {
   gap: 0;
   width: 56px;
   height: 56px;
-  border-radius: 20px;
+  border-radius: 10px;
   padding: 0;
   color: inherit;
   text-decoration: none;
@@ -321,6 +315,37 @@ button {
 
 .topbar-leading {
   gap: 1rem;
+}
+
+.epc-topbar-shell {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.epc-topbar-trail {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.epc-topbar-back {
+  flex: 0 0 auto;
+}
+
+.epc-topbar-breadcrumbs {
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.epc-breadcrumb-system button,
+.epc-breadcrumb-system span {
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
 }
 
 .page-title {
@@ -435,7 +460,7 @@ button {
   right: 0;
   top: calc(100% + 0.6rem);
   min-width: 220px;
-  border-radius: 22px;
+  border-radius: 11px;
   padding: 0.5rem;
   background: color-mix(in oklch, white 88%, var(--bg) 12%);
   z-index: 15;
@@ -447,7 +472,7 @@ button {
   align-items: center;
   gap: 0.7rem;
   border: 0;
-  border-radius: 16px;
+  border-radius: 8px;
   background: transparent;
   color: inherit;
   padding: 0.8rem 0.9rem;
@@ -496,7 +521,7 @@ button {
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .page-stack {
@@ -511,9 +536,7 @@ button {
   overflow: hidden;
   border-radius: var(--radius-lg);
   padding: clamp(1.5rem, 3vw, 2.3rem);
-  background:
-    linear-gradient(135deg, color-mix(in oklch, white 88%, var(--brand) 12%), transparent 42%),
-    linear-gradient(180deg, var(--surface), color-mix(in oklch, var(--surface-strong) 70%, var(--brand) 30%));
+  background: var(--section-surface);
 }
 
 .hero-panel {
@@ -597,7 +620,7 @@ button {
 .assistant-bubble,
 .cart-item,
 .cart-summary {
-  border-radius: 24px;
+  border-radius: 12px;
   background: color-mix(in oklch, white 58%, transparent);
 }
 
@@ -660,15 +683,11 @@ button {
 }
 
 .module-tile.tone-primary {
-  background:
-    linear-gradient(180deg, color-mix(in oklch, white 90%, var(--brand) 10%), transparent),
-    var(--surface);
+  background: var(--surface);
 }
 
 .module-tile.tone-secondary {
-  background:
-    linear-gradient(180deg, color-mix(in oklch, var(--brand) 8%, oklch(0.99 0.004 85) 92%), transparent),
-    var(--surface);
+  background: var(--surface);
 }
 
 .module-icon {
@@ -676,7 +695,7 @@ button {
   height: 2.8rem;
   width: 2.8rem;
   place-items: center;
-  border-radius: 18px;
+  border-radius: 9px;
   background: color-mix(in oklch, var(--brand) 15%, transparent);
 }
 
@@ -710,13 +729,11 @@ button {
 .orders-board,
 .epc-search-shell {
   padding: 1.3rem;
-  background: var(--surface);
+  background: var(--section-surface);
 }
 
 .insight-panel.emphasis {
-  background:
-    linear-gradient(155deg, color-mix(in oklch, var(--brand) 13%, transparent), transparent 55%),
-    var(--surface);
+  background: var(--section-surface-strong);
 }
 
 .placeholder-hero,
@@ -803,7 +820,7 @@ button {
 .order-row {
   justify-content: space-between;
   gap: 1rem;
-  border-radius: 20px;
+  border-radius: 10px;
   padding: 1rem;
   background: color-mix(in oklch, white 62%, transparent);
 }
@@ -825,14 +842,12 @@ button {
   bottom: 1rem;
   z-index: 30;
   display: grid;
-  align-content: start;
-  gap: 1rem;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
   width: min(420px, calc(100vw - 2rem));
-  padding: 1.2rem;
-  border-radius: 30px;
-  background:
-    linear-gradient(180deg, color-mix(in oklch, white 88%, var(--brand) 12%), transparent 26%),
-    color-mix(in oklch, white 92%, var(--bg) 8%);
+  padding: 0.9rem;
+  border-radius: 15px;
+  background: color-mix(in oklch, white 92%, var(--bg) 8%);
   transform: translateX(calc(100% + 2rem));
   transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -842,8 +857,16 @@ button {
 }
 
 .drawer-head {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
+  min-height: 2.6rem;
+}
+
+.side-drawer .drawer-head h2 {
+  font-size: 1.1rem;
+  line-height: 1.1;
 }
 
 .drawer-description {
@@ -860,7 +883,12 @@ button {
 
 .drawer-section {
   display: grid;
-  gap: 0.8rem;
+  gap: 0.65rem;
+}
+
+.cart-scroll-region {
+  min-height: 0;
+  overflow: hidden;
 }
 
 .prompt-list,
@@ -872,7 +900,7 @@ button {
 
 .prompt-chip {
   justify-content: flex-start;
-  border-radius: 18px;
+  border-radius: 9px;
   background: color-mix(in oklch, white 55%, transparent);
   padding-inline: 0.95rem;
 }
@@ -908,13 +936,160 @@ button {
 
 .cart-item {
   display: grid;
-  gap: 0.3rem;
-  padding: 1rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.65rem;
+  padding: 0.72rem 0.8rem;
   border: 1px solid color-mix(in oklch, var(--brand) 15%, transparent);
 }
 
-.cart-summary {
+.cart-checkbox {
+  width: 1rem;
+  height: 1rem;
+  margin: 0.2rem 0 0;
+  accent-color: color-mix(in oklch, var(--brand) 82%, black 18%);
+}
+
+.cart-vehicle-group {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in oklch, var(--brand) 18%, transparent);
+  background: color-mix(in oklch, white 82%, var(--brand) 18%);
+}
+
+.cart-vehicle-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 1rem;
+}
+
+.cart-vehicle-meta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.cart-vehicle-copy {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.cart-vehicle-title,
+.cart-vehicle-total {
+  margin: 0;
+  font-weight: 600;
+}
+
+.cart-vehicle-title {
+  font-family: "Space Grotesk", sans-serif;
+  line-height: 1.35;
+}
+
+.cart-vehicle-vin {
+  color: var(--muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.cart-vehicle-items {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.cart-item-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.7rem;
+  align-items: start;
+}
+
+.cart-item-copy,
+.cart-item-side,
+.cart-item-bottom {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.cart-item-copy {
+  min-width: 0;
+}
+
+.cart-item-name {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.cart-item-sku,
+.cart-qty-label {
+  color: var(--muted);
+}
+
+.cart-item-sku {
+  font-size: 0.92rem;
+  line-height: 1.2;
+}
+
+.cart-item-amount {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.2;
+}
+
+.cart-item-side {
+  justify-items: end;
+  text-align: right;
+  min-width: 5.8rem;
+}
+
+.cart-item-bottom {
+  justify-items: end;
+  margin-top: 0.32rem;
+}
+
+.cart-qty-stepper {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr) 1.75rem;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.cart-mini-button {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.cart-qty-value {
+  min-width: 1.75rem;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.cart-delete-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: color-mix(in oklch, var(--brand) 72%, black 28%);
+  font-size: 0.84rem;
+  line-height: 1.1;
+}
+
+.cart-summary {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.6rem;
+  align-self: end;
+  padding-top: 0.05rem;
+  border-top: 1px solid color-mix(in oklch, var(--brand) 12%, transparent);
 }
 
 .summary-heading,
@@ -929,6 +1104,31 @@ button {
 .summary-row {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  white-space: nowrap;
+}
+
+.cart-summary-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.cart-summary-actions .primary-action.block,
+.cart-summary-actions .secondary-action.block {
+  min-height: 2.15rem;
+  width: auto;
+  min-width: 6.2rem;
+  padding: 0 0.85rem;
+}
+
+.cart-list {
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  padding-right: 0.2rem;
 }
 
 .epc-page {
@@ -963,6 +1163,10 @@ button {
   gap: 1rem;
 }
 
+.workspace.is-epc-workspace .epc-subpage-bar {
+  display: none;
+}
+
 .epc-back-button {
   min-height: 2.9rem;
 }
@@ -973,14 +1177,11 @@ button {
 
 .epc-hero,
 .epc-guide-panel,
-.epc-workbench,
 .epc-home-catalog-panel,
 .epc-history-rail {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background:
-    linear-gradient(180deg, color-mix(in oklch, white 84%, var(--brand) 16%), transparent 24%),
-    var(--surface);
+  background: var(--section-surface);
   box-shadow: var(--shadow);
 }
 
@@ -1061,7 +1262,7 @@ button {
 .epc-aside-panel {
   display: grid;
   gap: 0.55rem;
-  border-radius: 28px;
+  border-radius: 14px;
   padding: 1.1rem;
   background: color-mix(in oklch, white 58%, transparent);
   border: 1px solid color-mix(in oklch, var(--brand) 18%, transparent);
@@ -1104,14 +1305,13 @@ button {
 
 .epc-home-catalog-panel,
 .epc-history-rail,
-.epc-guide-panel,
-.epc-workbench {
+.epc-guide-panel {
   padding: 1.3rem;
 }
 
 .epc-workbench {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   height: 100%;
   min-height: 0;
 }
@@ -1179,7 +1379,7 @@ button {
   justify-content: space-between;
   gap: 0.75rem;
   border: 1px solid color-mix(in oklch, var(--brand) 18%, transparent);
-  border-radius: 18px;
+  border-radius: 9px;
   padding: 0.55rem 0.7rem 0.55rem 0.8rem;
   background: color-mix(in oklch, white 80%, var(--brand-soft) 20%);
 }
@@ -1222,7 +1422,7 @@ button {
 .epc-stack-button,
 .epc-diagram-card {
   border: 1px solid var(--line);
-  border-radius: 24px;
+  border-radius: 12px;
   background: color-mix(in oklch, white 66%, transparent);
   color: inherit;
   text-align: left;
@@ -1274,7 +1474,7 @@ button {
   height: 4.5rem;
   width: 4.5rem;
   place-items: center;
-  border-radius: 22px;
+  border-radius: 11px;
   background: color-mix(in oklch, var(--brand) 18%, transparent);
   font-family: "Space Grotesk", sans-serif;
   font-size: 1.35rem;
@@ -1366,7 +1566,7 @@ button {
   display: grid;
   gap: 0.8rem;
   align-content: start;
-  border-radius: 26px;
+  border-radius: 13px;
   padding: 1rem;
   background: color-mix(in oklch, white 60%, transparent);
   border: 1px solid color-mix(in oklch, var(--brand) 14%, transparent);
@@ -1409,10 +1609,8 @@ button {
   place-items: center;
   width: 4.6rem;
   min-height: 4.6rem;
-  border-radius: 18px;
-  background:
-    radial-gradient(circle at top, color-mix(in oklch, var(--brand) 18%, transparent), transparent 60%),
-    color-mix(in oklch, var(--brand) 8%, white 92%);
+  border-radius: 9px;
+  background: color-mix(in oklch, var(--brand) 8%, white 92%);
   color: color-mix(in oklch, var(--brand) 78%, black 22%);
   font-size: 0.82rem;
   font-weight: 700;
@@ -1441,14 +1639,14 @@ button {
 }
 
 .epc-vehicle-layout.is-selector-open {
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 388px);
+  grid-template-columns: minmax(560px, 1fr) minmax(320px, 388px);
 }
 
 .epc-vehicle-board,
 .epc-vehicle-selector {
-  border-radius: 30px;
+  border-radius: 15px;
   padding: 1rem;
-  background: color-mix(in oklch, white 64%, transparent);
+  background: var(--section-surface);
   border: 1px solid color-mix(in oklch, var(--brand) 14%, transparent);
   min-height: 0;
 }
@@ -1463,6 +1661,10 @@ button {
   justify-content: flex-end;
   align-items: flex-start;
   gap: 1rem;
+}
+
+.epc-vehicle-head {
+  justify-content: flex-start;
 }
 
 .epc-vehicle-head > p {
@@ -1491,9 +1693,11 @@ button {
 
 .epc-series-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  grid-template-columns: repeat(auto-fill, 138px);
   gap: 1rem;
   margin-top: 1.1rem;
+  justify-content: start;
+  align-content: start;
 }
 
 .epc-series-card,
@@ -1509,16 +1713,38 @@ button {
 
 .epc-series-card {
   display: grid;
-  place-items: center;
-  aspect-ratio: 1 / 1;
-  min-height: 8rem;
-  padding: 1rem;
+  grid-template-rows: 84px auto;
+  align-content: start;
+  justify-items: stretch;
+  width: 138px;
+  min-height: 152px;
+  padding: 0.7rem;
+  gap: 0.65rem;
+  border-radius: 8px;
 }
 
-.epc-series-card span {
-  font-size: 1rem;
+.epc-series-card-media {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 84px;
+  border: 1px solid color-mix(in oklch, var(--brand) 12%, transparent);
+  background: color-mix(in oklch, white 94%, var(--brand) 6%);
+  color: color-mix(in oklch, var(--brand) 68%, black 32%);
+  border-radius: 6px;
+}
+
+.epc-series-card-copy {
+  display: grid;
+  align-content: start;
+  min-height: 2.6rem;
+}
+
+.epc-series-card-copy strong {
+  font-size: 0.95rem;
   font-weight: 600;
   text-align: center;
+  line-height: 1.35;
 }
 
 .epc-series-card:hover,
@@ -1528,6 +1754,12 @@ button {
   transform: translateY(-1px);
   border-color: color-mix(in oklch, var(--brand) 30%, transparent);
   background: color-mix(in oklch, var(--brand) 10%, white 90%);
+}
+
+.epc-series-card:hover .epc-series-card-media,
+.epc-series-card.is-active .epc-series-card-media {
+  border-color: color-mix(in oklch, var(--brand) 24%, transparent);
+  background: color-mix(in oklch, white 90%, var(--brand) 10%);
 }
 
 .epc-vehicle-selector {
@@ -1627,19 +1859,20 @@ button {
 .epc-group-diagram-panel {
   display: grid;
   align-content: start;
-  gap: 0.9rem;
-  border-radius: 26px;
-  padding: 1rem;
+  gap: 1rem;
+  border-radius: 15px;
+  padding: 1.1rem;
   height: 100%;
   min-height: 0;
-  background: color-mix(in oklch, white 64%, transparent);
+  background: var(--section-surface);
   border: 1px solid color-mix(in oklch, var(--brand) 12%, transparent);
 }
 
 .epc-column-head {
   display: grid;
-  gap: 0.18rem;
+  gap: 0.22rem;
   align-content: start;
+  padding-inline: 0.15rem;
 }
 
 .epc-column-head h4,
@@ -1659,29 +1892,33 @@ button {
 .epc-group-tree-section {
   display: grid;
   align-content: start;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
 }
 
 .epc-group-tree-parent,
 .epc-group-tree-child {
   width: 100%;
-  border: 1px solid color-mix(in oklch, var(--brand) 14%, transparent);
-  background: color-mix(in oklch, white 72%, transparent);
+  border: 1px solid color-mix(in oklch, var(--brand) 8%, transparent);
   color: inherit;
   text-align: left;
   transition:
     background-color 180ms ease,
     border-color 180ms ease,
-    transform 180ms ease;
+    transform 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .epc-group-tree-parent {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
+  gap: 0.55rem;
   justify-content: flex-start;
-  min-height: 3rem;
-  padding: 0.8rem 1rem;
-  background: color-mix(in oklch, var(--brand) 6%, white 94%);
+  min-height: 3.3rem;
+  padding: 0.9rem 1rem 0.9rem 1.05rem;
+  border-radius: 10px;
+  background: color-mix(in oklch, white 98%, var(--brand) 2%);
+  box-shadow: inset 0 1px 0 color-mix(in oklch, white 84%, transparent);
 }
 
 .epc-group-tree-children {
@@ -1703,19 +1940,24 @@ button {
 .epc-group-tree-children-inner {
   display: grid;
   overflow: hidden;
+  gap: 0.38rem;
+  padding-left: 0.55rem;
+  border-left: 1px solid color-mix(in oklch, var(--brand) 12%, transparent);
+  margin-left: 0.95rem;
 }
 
 .epc-group-tree-child {
-  display: grid;
+  display: flex;
   align-items: center;
-  min-height: 2.8rem;
-  padding: 0.7rem 1rem 0.7rem 2.95rem;
-  border-top: 0;
+  min-height: 3rem;
+  padding: 0.78rem 1rem 0.78rem 1.1rem;
+  border-radius: 8px;
+  background: color-mix(in oklch, white 98%, var(--brand) 2%);
 }
 
 .epc-group-tree-caret {
   margin-left: auto;
-  color: var(--muted);
+  color: color-mix(in oklch, var(--brand) 58%, var(--muted) 42%);
   transition: transform 180ms ease;
 }
 
@@ -1728,8 +1970,66 @@ button {
 .epc-group-tree-parent.is-active,
 .epc-group-tree-child.is-active {
   transform: translateY(-1px);
-  border-color: color-mix(in oklch, var(--brand) 28%, transparent);
-  background: color-mix(in oklch, var(--brand) 10%, white 90%);
+  border-color: color-mix(in oklch, var(--brand) 30%, transparent);
+  box-shadow: none;
+}
+
+.epc-group-tree-parent.is-active,
+.epc-group-tree-child.is-active {
+  background: color-mix(in oklch, var(--brand) 14%, white 86%);
+  border-color: color-mix(in oklch, var(--brand) 42%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, white 62%, transparent);
+}
+
+.epc-group-tree-parent strong,
+.epc-group-tree-child strong {
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.epc-group-tree-parent.is-active strong,
+.epc-group-tree-child.is-active strong {
+  color: color-mix(in oklch, var(--brand) 86%, black 14%);
+}
+
+.epc-group-tree-parent.is-active {
+  position: relative;
+}
+
+.epc-group-tree-parent.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  width: 0.28rem;
+  height: 1.45rem;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--brand) 80%, white 20%);
+  transform: translateY(-50%);
+}
+
+.epc-group-tree-parent.is-active .epc-stack-accent {
+  transform: scale(1.12);
+  box-shadow: none;
+}
+
+.epc-group-tree-child.is-active {
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.epc-group-tree-child.is-active::before {
+  content: "";
+  position: absolute;
+  left: 0.65rem;
+  top: 50%;
+  width: 0.44rem;
+  height: 0.44rem;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--brand) 76%, white 24%);
+  transform: translateY(-50%);
+  box-shadow: none;
 }
 
 .epc-group-diagram-panel {
@@ -1738,36 +2038,48 @@ button {
 
 .epc-group-diagram-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 1.25rem 1rem;
+  grid-template-columns: repeat(auto-fill, 172px);
+  grid-auto-rows: 250px;
+  gap: 1rem;
   align-content: start;
+  justify-content: start;
 }
 
 .epc-group-diagram-tile {
   display: grid;
-  justify-items: center;
-  gap: 0.65rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  grid-template-rows: 172px auto;
+  justify-items: stretch;
+  align-content: start;
+  gap: 0.7rem;
+  width: 172px;
+  min-height: 250px;
+  padding: 0.7rem;
+  border: 1px solid color-mix(in oklch, var(--brand) 8%, transparent);
+  border-radius: 12px;
+  background: color-mix(in oklch, white 98%, var(--brand) 2%);
   color: inherit;
-  text-align: center;
+  text-align: left;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
 }
 
 .epc-group-diagram-frame {
   display: grid;
   place-items: center;
-  gap: 0.35rem;
+  gap: 0.45rem;
   width: 100%;
-  aspect-ratio: 0.9 / 1;
-  border: 1px solid color-mix(in oklch, var(--brand) 18%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in oklch, white 74%, transparent), color-mix(in oklch, white 90%, transparent)),
-    radial-gradient(circle at top, color-mix(in oklch, var(--brand) 12%, transparent), transparent 56%);
+  height: 172px;
+  border: 1px solid color-mix(in oklch, var(--brand) 10%, transparent);
+  border-radius: 9px;
+  background: color-mix(in oklch, white 99%, var(--brand) 1%);
   transition:
     transform 180ms ease,
     border-color 180ms ease,
-    background-color 180ms ease;
+    background-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .epc-group-diagram-frame span {
@@ -1777,25 +2089,72 @@ button {
 
 .epc-group-diagram-copy {
   width: 100%;
+  min-height: 3.15rem;
+  display: grid;
+  align-content: start;
 }
 
 .epc-group-diagram-copy strong {
   display: block;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.45;
+  font-size: 0.96rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.epc-group-diagram-tile:hover,
+.epc-group-diagram-tile.is-active {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklch, var(--brand) 28%, transparent);
+  box-shadow: none;
+}
+
+.epc-group-diagram-tile.is-active {
+  position: relative;
+  background: color-mix(in oklch, var(--brand) 14%, white 86%);
+  border-color: color-mix(in oklch, var(--brand) 46%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, white 64%, transparent);
+}
+
+.epc-group-diagram-tile.is-active::after {
+  content: "当前";
+  position: absolute;
+  right: 0.7rem;
+  top: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.7rem;
+  height: 1.55rem;
+  padding: 0 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--brand) 82%, white 18%);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  box-shadow: none;
 }
 
 .epc-group-diagram-tile:hover .epc-group-diagram-frame,
 .epc-group-diagram-tile.is-active .epc-group-diagram-frame {
-  transform: translateY(-2px);
-  border-color: color-mix(in oklch, var(--brand) 30%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in oklch, var(--brand) 8%, white 92%), color-mix(in oklch, white 94%, transparent)),
-    radial-gradient(circle at top, color-mix(in oklch, var(--brand) 16%, transparent), transparent 56%);
+  border-color: color-mix(in oklch, var(--brand) 22%, transparent);
+  box-shadow: none;
+  background: color-mix(in oklch, var(--brand) 8%, white 92%);
 }
 
 .epc-group-diagram-tile.is-active .epc-group-diagram-copy strong {
   color: color-mix(in oklch, var(--brand) 82%, black 18%);
+}
+
+.epc-group-diagram-tile.is-active .epc-group-diagram-frame {
+  border-color: color-mix(in oklch, var(--brand) 42%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklch, white 82%, transparent),
+    0 0 0 5px color-mix(in oklch, var(--brand) 12%, transparent);
 }
 
 .epc-group-diagram-footer {
@@ -1810,7 +2169,6 @@ button {
 
 .epc-workbench-grid {
   grid-template-columns: minmax(340px, 0.95fr) minmax(0, 1.25fr);
-  margin-top: 1rem;
   height: 100%;
   min-height: 0;
 }
@@ -1818,15 +2176,15 @@ button {
 .diagram-stage,
 .parts-table-shell {
   display: grid;
-  border-radius: 28px;
+  border-radius: 14px;
   padding: 1rem;
   min-height: 0;
-  background: color-mix(in oklch, white 64%, transparent);
+  background: var(--section-surface);
   border: 1px solid color-mix(in oklch, var(--brand) 14%, transparent);
 }
 
 .diagram-stage {
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .parts-table-shell {
@@ -1834,27 +2192,75 @@ button {
 }
 
 .diagram-stage-head {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 0.8rem;
 }
 
-.diagram-stage-head p,
+.diagram-stage-head span,
 .diagram-stage-head strong,
 .diagram-caption small,
 .diagram-caption strong {
   margin: 0;
 }
 
+.diagram-title-row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.diagram-stage-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.diagram-control-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.diagram-control-button {
+  height: 2.2rem;
+  width: 2.2rem;
+}
+
 .diagram-canvas {
   position: relative;
   overflow: hidden;
   min-height: 26rem;
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at 20% 20%, color-mix(in oklch, var(--brand) 14%, transparent), transparent 24%),
-    linear-gradient(180deg, oklch(0.98 0.008 85), color-mix(in oklch, var(--brand) 6%, white 94%));
+  border-radius: 14px;
+  background: color-mix(in oklch, white 96%, var(--brand) 4%);
   border: 1px solid color-mix(in oklch, var(--brand) 15%, transparent);
+  cursor: grab;
+  touch-action: none;
+}
+
+.diagram-canvas.is-dragging {
+  cursor: grabbing;
+}
+
+.diagram-scene {
+  position: absolute;
+  inset: 0;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.diagram-demo-image {
+  position: absolute;
+  inset: 4%;
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+  filter: none;
 }
 
 .diagram-outline {
@@ -1881,20 +2287,42 @@ button {
 
 .diagram-hotspot {
   position: absolute;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
+  display: grid;
+  place-items: center;
   transform: translate(-50%, -50%);
-  border: 1px solid color-mix(in oklch, var(--brand) 28%, transparent);
+  min-width: 2.6rem;
+  height: 2.1rem;
+  border: 1px solid color-mix(in oklch, var(--brand) 22%, transparent);
   border-radius: 999px;
-  padding: 0.45rem 0.7rem;
-  background: color-mix(in oklch, white 82%, transparent);
-  color: var(--text);
+  padding: 0 0.7rem;
+  background: color-mix(in oklch, white 94%, transparent);
+  color: color-mix(in oklch, var(--brand) 72%, black 28%);
+  box-shadow: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .diagram-hotspot.is-active {
-  background: var(--brand);
+  background: color-mix(in oklch, var(--brand) 86%, white 14%);
+  border-color: color-mix(in oklch, var(--brand) 48%, transparent);
   color: white;
+  box-shadow: none;
+}
+
+.diagram-hotspot:hover {
+  transform: translate(-50%, -50%) translateY(-1px);
+  border-color: color-mix(in oklch, var(--brand) 34%, transparent);
+}
+
+.diagram-hotspot-number {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .diagram-caption {
@@ -1910,7 +2338,7 @@ button {
 
 .parts-table {
   width: 100%;
-  min-width: 840px;
+  min-width: 760px;
   border-collapse: separate;
   border-spacing: 0 0.55rem;
 }
@@ -1938,11 +2366,27 @@ button {
 }
 
 .parts-table tbody tr td:first-child {
-  border-radius: 18px 0 0 18px;
+  border-radius: 9px 0 0 9px;
 }
 
 .parts-table tbody tr td:last-child {
-  border-radius: 0 18px 18px 0;
+  border-radius: 0 9px 9px 0;
+  overflow: visible;
+  width: 5.5rem;
+  white-space: nowrap;
+}
+
+.parts-table th:nth-child(1),
+.parts-table td:nth-child(1) {
+  width: 4rem;
+}
+
+.parts-table th:nth-child(3),
+.parts-table td:nth-child(3),
+.parts-table th:nth-child(6),
+.parts-table td:nth-child(6) {
+  text-align: center;
+  white-space: nowrap;
 }
 
 .parts-table tbody tr.is-active {
@@ -1957,6 +2401,31 @@ button {
   font-weight: 600;
 }
 
+.parts-action-cell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.epc-cart-action {
+  height: 2.45rem;
+  width: 2.45rem;
+  color: color-mix(in oklch, var(--brand) 78%, black 22%);
+}
+
+.epc-cart-action.is-added {
+  background: color-mix(in oklch, var(--brand) 12%, white 88%);
+  border-color: color-mix(in oklch, var(--brand) 28%, transparent);
+  color: color-mix(in oklch, var(--brand) 86%, black 14%);
+}
+
+.epc-cart-action.is-open {
+  border-color: color-mix(in oklch, var(--brand) 32%, transparent);
+  background: color-mix(in oklch, white 82%, var(--brand) 18%);
+}
+
 .quantity-inline {
   display: flex;
   align-items: center;
@@ -1964,14 +2433,96 @@ button {
   gap: 0.45rem;
 }
 
+.epc-cart-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.45rem);
+  z-index: 3;
+  flex-wrap: nowrap;
+  transform: none;
+  border-radius: 11px;
+  padding: 0.6rem;
+  background: color-mix(in oklch, white 96%, var(--brand) 4%);
+  border: 1px solid color-mix(in oklch, var(--brand) 18%, transparent);
+  box-shadow: none;
+}
+
+.epc-cart-popover.is-floating {
+  position: fixed;
+  right: auto;
+  top: 0;
+  z-index: 4000;
+  transform: translateX(calc(-100% + 2.45rem));
+}
+
+.epc-cart-popover.is-floating::before {
+  content: "";
+  position: absolute;
+  right: 1rem;
+  top: -0.42rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-left: 1px solid color-mix(in oklch, var(--brand) 18%, transparent);
+  border-top: 1px solid color-mix(in oklch, var(--brand) 18%, transparent);
+  background: color-mix(in oklch, white 97%, var(--brand) 3%);
+  transform: rotate(45deg);
+}
+
+.epc-cart-popover-body {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 184px;
+}
+
+.epc-quantity-panel {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.epc-quantity-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.epc-quantity-stepper {
+  display: grid;
+  grid-template-columns: 2.35rem minmax(0, 1fr) 2.35rem;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.epc-quantity-value {
+  display: grid;
+  place-items: center;
+  min-height: 2.35rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in oklch, var(--brand) 14%, transparent);
+  background: color-mix(in oklch, white 98%, var(--brand) 2%);
+  color: color-mix(in oklch, var(--brand) 82%, black 18%);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.epc-cart-popover-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.45rem;
+}
+
 .quantity-button {
-  height: 2.25rem;
-  width: 2.25rem;
+  height: 2.35rem;
+  width: 2.35rem;
+  background: color-mix(in oklch, white 98%, var(--brand) 2%);
 }
 
 .epc-mini-action {
-  min-height: 2.5rem;
-  padding: 0 0.85rem;
+  min-height: 2.45rem;
+  padding: 0 0.8rem;
+  font-size: 0.86rem;
 }
 
 .epc-modal-wrap {
@@ -1989,11 +2540,9 @@ button {
 .epc-detail-drawer,
 .epc-advanced-panel {
   width: min(1040px, 100%);
-  border-radius: 32px;
+  border-radius: 16px;
   border: 1px solid var(--line);
-  background:
-    linear-gradient(180deg, color-mix(in oklch, white 88%, var(--brand) 12%), transparent 26%),
-    color-mix(in oklch, white 96%, var(--bg) 4%);
+  background: color-mix(in oklch, white 96%, var(--bg) 4%);
   box-shadow: var(--shadow);
 }
 
@@ -2033,7 +2582,7 @@ button {
 .compatibility-card,
 .advanced-result-card,
 .part-gallery-card {
-  border-radius: 22px;
+  border-radius: 11px;
   padding: 0.9rem 1rem;
   background: color-mix(in oklch, white 66%, transparent);
   border: 1px solid color-mix(in oklch, var(--brand) 14%, transparent);
@@ -2096,7 +2645,7 @@ button {
 .advanced-field select {
   min-height: 3rem;
   border: 1px solid color-mix(in oklch, var(--brand) 18%, transparent);
-  border-radius: 18px;
+  border-radius: 9px;
   padding: 0 0.9rem;
   background: color-mix(in oklch, white 64%, transparent);
   color: var(--text);
@@ -2119,7 +2668,7 @@ button {
   place-items: center;
   width: 5rem;
   min-height: 5rem;
-  border-radius: 20px;
+  border-radius: 10px;
   background: color-mix(in oklch, var(--brand) 8%, white 92%);
   color: color-mix(in oklch, var(--brand) 76%, black 24%);
   font-weight: 700;
@@ -2266,6 +2815,11 @@ button {
   .epc-subpage-bar {
     flex-wrap: wrap;
     align-items: start;
+  }
+
+  .epc-topbar-trail,
+  .epc-topbar-breadcrumbs {
+    flex-wrap: wrap;
   }
 
   .epc-breadcrumbs {

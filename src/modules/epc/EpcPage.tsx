@@ -19,7 +19,17 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import type { Locale } from "../../content";
-import type { CartLine, LocaleText } from "../cart/cartTypes";
+import {
+  buildCartBindingKey,
+  normalizeCartVin,
+  type CartLine,
+  type LocaleText,
+} from "../cart/cartTypes";
+import {
+  brands as runtimeBrands,
+  defaultHistoryEntries as runtimeDefaultHistoryEntries,
+  vehicles as runtimeVehicles,
+} from "./epcMockRuntimeData";
 
 export type Brand = {
   id: string;
@@ -136,7 +146,11 @@ export const text = (zh: string, en: string): LocaleText => ({
   "en-US": en,
 });
 
-export const brands: Brand[] = [
+export const brands = runtimeBrands;
+export const vehicles = runtimeVehicles;
+export const defaultHistoryEntries = runtimeDefaultHistoryEntries;
+
+const legacyBrands: Brand[] = [
   {
     id: "wuling",
     mark: "W",
@@ -157,7 +171,7 @@ export const brands: Brand[] = [
   },
 ];
 
-export const vehicles: VehicleRecord[] = [
+const legacyVehicles: VehicleRecord[] = [
   {
     id: "wuling-mini-215",
     brandId: "wuling",
@@ -616,7 +630,7 @@ export const pageCopy = {
   },
 } as const;
 
-export const defaultHistoryEntries: HistoryEntry[] = [
+const legacyDefaultHistoryEntries: HistoryEntry[] = [
   {
     id: "seed-mini-reducer",
     vehicleId: "wuling-mini-215",
@@ -659,6 +673,22 @@ export function lower(value: string) {
 
 export function getText(locale: Locale, value: LocaleText) {
   return value[locale];
+}
+
+export function buildVehicleContextLabel(
+  locale: Locale,
+  vehicle: VehicleRecord,
+  entryVin?: string,
+) {
+  return [
+    entryVin,
+    getText(locale, vehicle.brand),
+    getText(locale, vehicle.series),
+    vehicle.year,
+    getText(locale, vehicle.model),
+  ]
+    .filter(Boolean)
+    .join(" / ");
 }
 
 export function formatMoney(locale: Locale, amount: number) {
@@ -1047,6 +1077,7 @@ export function EpcPage({
   const [draftQuantity, setDraftQuantity] = useState(1);
   const [toastVisible, setToastVisible] = useState(false);
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>(() => readHistoryEntries());
+  const entryVin = normalizeCartVin(searchParams.get("vin") ?? "");
 
   const currentVehicle = vehicleMap.get(selectedVehicleId) ?? vehicles[0];
   const currentGroup =
@@ -1059,6 +1090,16 @@ export function EpcPage({
     currentSubgroup.diagrams[0];
   const currentPart =
     currentDiagram.parts.find((part) => part.id === activePartId) ?? currentDiagram.parts[0];
+  const currentBindingKey = buildCartBindingKey(currentVehicle.id, entryVin);
+  const cartVehicle = {
+    vehicleId: currentVehicle.id,
+    source: entryVin ? ("vin" as const) : ("vehicle" as const),
+    vin: entryVin || undefined,
+    brand: currentVehicle.brand,
+    series: currentVehicle.series,
+    year: currentVehicle.year,
+    model: currentVehicle.model,
+  };
 
   const seriesOptions = useMemo(() => {
     const seen = new Set<string>();
@@ -1427,19 +1468,21 @@ export function EpcPage({
 
   function handleConfirmAdd(part: PartRecord) {
     const context = text(
-      `${currentVehicle.brand["zh-CN"]} / ${currentVehicle.series["zh-CN"]} / ${currentVehicle.year} / ${currentVehicle.model["zh-CN"]}`,
-      `${currentVehicle.brand["en-US"]} / ${currentVehicle.series["en-US"]} / ${currentVehicle.year} / ${currentVehicle.model["en-US"]}`,
+      `${currentGroup.name["zh-CN"]} / ${currentSubgroup.name["zh-CN"]} / ${currentDiagram.code}`,
+      `${currentGroup.name["en-US"]} / ${currentSubgroup.name["en-US"]} / ${currentDiagram.code}`,
     );
 
     addToCart({
-      id: `${part.sku}:${currentVehicle.id}`,
-      bindingKey: currentVehicle.id,
+      id: `${part.sku}:${currentBindingKey}`,
+      bindingKey: currentBindingKey,
       sku: part.sku,
       quantity: draftQuantity,
       unitPrice: part.price,
       name: part.name,
       description: part.note,
       context,
+      vehicle: cartVehicle,
+      addedAt: Date.now(),
     });
 
     setQuantityEditorId(null);

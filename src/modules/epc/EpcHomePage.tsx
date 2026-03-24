@@ -1,5 +1,5 @@
 import { ArrowRight, History, Image, Search, X } from "lucide-react";
-import { type ClipboardEvent, useState } from "react";
+import { type ClipboardEvent, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Locale } from "../../content";
 import {
@@ -16,6 +16,7 @@ import {
   vehicleMap,
   vehicles,
 } from "./EpcPage";
+import { useEpcHeader } from "./epcHeaderContext";
 
 type EpcHomePageProps = {
   locale: Locale;
@@ -40,6 +41,14 @@ export function EpcHomePage({ locale }: EpcHomePageProps) {
   const [vinVehicleId, setVinVehicleId] = useState<string | null>(null);
   const [recognizedVin, setRecognizedVin] = useState("");
   const [pastedImage, setPastedImage] = useState<{ name: string; size: number } | null>(null);
+  const headerConfig = useMemo(
+    () => ({
+      backFallbackTo: "/",
+      backLabel: locale === "zh-CN" ? "返回系统首页" : "Back to overview",
+      breadcrumbs: [],
+    }),
+    [locale],
+  );
   const [historyEntries] = useState(() => {
     const seeds = readHistoryEntries();
     const timeLabels = ["16:54", "16:53", "16:43", "15:40", "昨天", "昨天", "3月18日", "3月18日"];
@@ -131,6 +140,8 @@ export function EpcHomePage({ locale }: EpcHomePageProps) {
       size: file.size,
     });
   }
+
+  useEpcHeader(headerConfig);
 
   return (
     <div className="page-stack epc-page epc-home-page">

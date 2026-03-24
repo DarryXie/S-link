@@ -2,6 +2,8 @@ import {
   BookOpen,
   Bot,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   CircleUserRound,
   House,
   Languages,
@@ -13,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   accentOptions,
   localeOptions,
@@ -22,6 +24,7 @@ import {
   type Locale,
   type PanelName,
 } from "../../content";
+import { EpcHeaderProvider, type EpcHeaderConfig } from "../epc/epcHeaderContext";
 
 type MainLayoutProps = {
   locale: Locale;
@@ -50,8 +53,10 @@ export function MainLayout({
 }: MainLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<MenuName>(null);
+  const [epcHeader, setEpcHeader] = useState<EpcHeaderConfig | null>(null);
   const actionsRef = useRef<HTMLDivElement | null>(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const pageTitle = useMemo(() => {
     if (location.pathname.startsWith("/epc")) {
@@ -79,6 +84,12 @@ export function MainLayout({
   useEffect(() => {
     setIsSidebarOpen(false);
     setOpenMenu(null);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!location.pathname.startsWith("/epc")) {
+      setEpcHeader(null);
+    }
   }, [location.pathname]);
 
   const navigationItems = [
@@ -122,23 +133,66 @@ export function MainLayout({
       </aside>
 
       <div className="content-shell">
-        <header className="topbar">
-          <div className="topbar-leading">
-            <button
-              className="icon-button mobile-only"
-              type="button"
-              onClick={() => setIsSidebarOpen((current) => !current)}
-              aria-label="toggle sidebar"
-            >
-              {isSidebarOpen ? <X size={18} /> : <Menu size={18} />}
-            </button>
-            <div>
-              <p className="page-kicker">{copy.brand.name}</p>
-              <h1 className="page-title">{pageTitle}</h1>
-            </div>
-          </div>
+        <EpcHeaderProvider value={setEpcHeader}>
+          <header className="topbar">
+            <div className="topbar-leading">
+              <button
+                className="icon-button mobile-only"
+                type="button"
+                onClick={() => setIsSidebarOpen((current) => !current)}
+                aria-label="toggle sidebar"
+              >
+                {isSidebarOpen ? <X size={18} /> : <Menu size={18} />}
+              </button>
+              {isEpcRoute && epcHeader ? (
+                <div className="epc-topbar-shell">
+                  <p className="page-kicker">{copy.brand.name}</p>
+                  <div className="epc-topbar-trail">
+                    <button
+                      type="button"
+                      className="icon-button epc-topbar-back"
+                      aria-label={epcHeader.backLabel}
+                      onClick={() => {
+                        if (window.history.length > 1) {
+                          navigate(-1);
+                          return;
+                        }
 
-          <div className="topbar-actions" ref={actionsRef}>
+                        navigate(epcHeader.backFallbackTo);
+                      }}
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+                    <section className="epc-breadcrumbs epc-topbar-breadcrumbs" aria-label="breadcrumbs">
+                      <div className="epc-breadcrumb-item epc-breadcrumb-system">
+                        <button type="button" onClick={() => navigate("/epc")}>
+                          {pageTitle}
+                        </button>
+                      </div>
+                      {epcHeader.breadcrumbs.map((item, index) => (
+                        <div key={`${item.label}-${index}`} className="epc-breadcrumb-item">
+                          <ChevronRight size={14} />
+                          {"onClick" in item ? (
+                            <button type="button" onClick={item.onClick}>
+                              {item.label}
+                            </button>
+                          ) : (
+                            <span>{item.label}</span>
+                          )}
+                        </div>
+                      ))}
+                    </section>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="page-kicker">{copy.brand.name}</p>
+                  <h1 className="page-title">{pageTitle}</h1>
+                </div>
+              )}
+            </div>
+
+            <div className="topbar-actions" ref={actionsRef}>
             <div className="menu-anchor">
               <button
                 className={`toolbar-button ${openMenu === "language" ? "is-open" : ""}`}
@@ -243,10 +297,11 @@ export function MainLayout({
                 </div>
               ) : null}
             </div>
-          </div>
-        </header>
+            </div>
+          </header>
 
-        <main className={`workspace ${isEpcRoute ? "is-epc-workspace" : ""}`}>{children}</main>
+          <main className={`workspace ${isEpcRoute ? "is-epc-workspace" : ""}`}>{children}</main>
+        </EpcHeaderProvider>
       </div>
 
       {isSidebarOpen ? (

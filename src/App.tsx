@@ -9,7 +9,7 @@ import {
 } from "./content";
 import { AssistantDrawer } from "./modules/assistant/AssistantDrawer";
 import { CartDrawer } from "./modules/cart/CartDrawer";
-import type { CartLine } from "./modules/cart/cartTypes";
+import { buildCartBindingKey, type CartLine } from "./modules/cart/cartTypes";
 import { DashboardPage } from "./modules/dashboard/DashboardPage";
 import { EpcGroupPage } from "./modules/epc/EpcGroupPage";
 import { EpcHomePage } from "./modules/epc/EpcHomePage";
@@ -20,6 +20,23 @@ import { OrdersPage } from "./modules/orders/OrdersPage";
 
 const localeStorageKey = "s-link.locale";
 const accentStorageKey = "s-link.accent";
+const seededVehicle = {
+  vehicleId: "seed-demo-vehicle",
+  source: "vehicle" as const,
+  brand: {
+    "zh-CN": "五菱",
+    "en-US": "Wuling",
+  },
+  series: {
+    "zh-CN": "宏光 MINI EV",
+    "en-US": "Hongguang MINI EV",
+  },
+  year: "2025",
+  model: {
+    "zh-CN": "215km 轻享款",
+    "en-US": "215km Lite",
+  },
+};
 
 function readStorage<T extends string>(key: string, fallback: T): T {
   if (typeof window === "undefined") {
@@ -30,26 +47,35 @@ function readStorage<T extends string>(key: string, fallback: T): T {
   return value ?? fallback;
 }
 
+function createSeededCartLines() {
+  const seededAt = Date.now();
+
+  return cartItems.map((item, index) => ({
+    id: item.id,
+    bindingKey: buildCartBindingKey(seededVehicle.vehicleId),
+    sku: item.sku,
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+    name: item.name,
+    description: item.description,
+    context: {
+      "zh-CN": "演示数据 / 初始购物车",
+      "en-US": "Demo data / seeded cart",
+    },
+    vehicle: seededVehicle,
+    addedAt: seededAt - index,
+  })) satisfies CartLine[];
+}
+
 export default function App() {
   const [locale, setLocale] = useState<Locale>(() => readStorage(localeStorageKey, "zh-CN"));
   const [accentTheme, setAccentTheme] = useState<AccentTheme>(() =>
     readStorage(accentStorageKey, "steel"),
   );
   const [activePanel, setActivePanel] = useState<PanelName>(null);
-  const [cartLines, setCartLines] = useState<CartLine[]>(() =>
-    cartItems.map((item) => ({
-      id: item.id,
-      bindingKey: `seed-${item.id}`,
-      sku: item.sku,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      name: item.name,
-      description: item.description,
-      context: {
-        "zh-CN": "演示数据 / 初始购物车",
-        "en-US": "Demo data / seeded cart",
-      },
-    })),
+  const [cartLines, setCartLines] = useState<CartLine[]>(() => createSeededCartLines());
+  const [selectedLineIds, setSelectedLineIds] = useState<Set<string>>(
+    () => new Set(createSeededCartLines().map((item) => item.id)),
   );
 
   useEffect(() => {
@@ -83,9 +109,11 @@ export default function App() {
       );
 
       if (!existing) {
+        setSelectedLineIds((selected) => new Set(selected).add(nextLine.id));
         return [nextLine, ...current];
       }
 
+      setSelectedLineIds((selected) => new Set(selected).add(existing.id));
       return current.map((item) =>
         item.id === existing.id
           ? {
@@ -93,11 +121,69 @@ export default function App() {
               quantity: item.quantity + nextLine.quantity,
               description: nextLine.description,
               context: nextLine.context,
+              vehicle: nextLine.vehicle,
+              addedAt: nextLine.addedAt,
             }
           : item,
       );
     });
     setActivePanel("cart");
+  }
+
+  function handleToggleLine(lineId: string) {
+    setSelectedLineIds((current) => {
+      const next = new Set(current);
+
+      if (next.has(lineId)) {
+        next.delete(lineId);
+      } else {
+        next.add(lineId);
+      }
+
+      return next;
+    });
+  }
+
+  function handleToggleGroup(bindingKey: string, checked: boolean) {
+    setSelectedLineIds((current) => {
+      const next = new Set(current);
+
+      cartLines.forEach((item) => {
+        if (item.bindingKey !== bindingKey) {
+          return;
+        }
+
+        if (checked) {
+          next.add(item.id);
+        } else {
+          next.delete(item.id);
+        }
+      });
+
+      return next;
+    });
+  }
+
+  function handleQuantityChange(lineId: string, quantity: number) {
+    setCartLines((current) =>
+      current.map((item) =>
+        item.id === lineId
+          ? {
+              ...item,
+              quantity: Math.max(1, quantity),
+            }
+          : item,
+      ),
+    );
+  }
+
+  function handleDeleteLine(lineId: string) {
+    setCartLines((current) => current.filter((item) => item.id !== lineId));
+    setSelectedLineIds((current) => {
+      const next = new Set(current);
+      next.delete(lineId);
+      return next;
+    });
   }
 
   return (
@@ -116,31 +202,19 @@ export default function App() {
           <Route
             path="/"
             element={
-              <DashboardPage
-                copy={copy}
-                onOpenAssistant={() => setActivePanel("assistant")}
-              />
+              <DashboardPage copy={copy} onOpenAssistant={() => setActivePanel("assistant")} />
             }
           />
-          <Route
-            path="/epc"
-            element={<EpcHomePage locale={locale} />}
-          />
-          <Route
-            path="/epc/wizard"
-            element={<EpcWizardPage locale={locale} />}
-          />
-          <Route
-            path="/epc/groups"
-            element={<EpcGroupPage locale={locale} />}
-          />
+          <Route path="/epc" element={<EpcHomePage locale={locale} />} />
+          <Route path="/epc/wizard" element={<EpcWizardPage locale={locale} />} />
+          <Route path="/epc/groups" element={<EpcGroupPage locale={locale} />} />
           <Route
             path="/epc/workbench"
             element={
               <EpcWorkbenchPage
                 locale={locale}
                 onAddToCart={handleAddToCart}
-                onOpenCart={() => setActivePanel("cart")}
+                cartLines={cartLines}
               />
             }
           />
@@ -160,6 +234,11 @@ export default function App() {
         isOpen={activePanel === "cart"}
         onClose={() => setActivePanel(null)}
         items={cartLines}
+        selectedLineIds={selectedLineIds}
+        onToggleLine={handleToggleLine}
+        onToggleGroup={handleToggleGroup}
+        onQuantityChange={handleQuantityChange}
+        onDeleteLine={handleDeleteLine}
       />
       {activePanel ? (
         <button

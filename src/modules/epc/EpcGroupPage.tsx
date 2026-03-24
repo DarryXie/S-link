@@ -1,14 +1,16 @@
 import { ArrowRight, ChevronDown, ChevronRight, Image as ImageIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Locale } from "../../content";
 import {
   EpcBackButton,
+  buildVehicleContextLabel,
   buildEpcPath,
   getText,
   pageCopy,
   useEpcSelectionState,
 } from "./EpcPage";
+import { useEpcHeader } from "./epcHeaderContext";
 
 type EpcGroupPageProps = {
   locale: Locale;
@@ -36,24 +38,40 @@ export function EpcGroupPage({ locale }: EpcGroupPageProps) {
     );
   }, [currentGroup.id]);
 
-  const vehicleContextLabel = [
-    entryVin,
-    getText(locale, currentVehicle.brand),
-    getText(locale, currentVehicle.series),
-    currentVehicle.year,
-    getText(locale, currentVehicle.model),
-  ]
-    .filter(Boolean)
-    .join(" / ");
+  const vehicleContextLabel = buildVehicleContextLabel(locale, currentVehicle, entryVin);
 
   const breadcrumbItems = [
     { label: ui.breadcrumbHome, onClick: () => navigate("/epc") },
     { label: vehicleContextLabel },
   ];
+  const headerConfig = useMemo(
+    () => ({
+      backFallbackTo: buildEpcPath("/epc/wizard", {
+        vehicleId: currentVehicle.id,
+        groupId: currentGroup.id,
+        subgroupId: currentSubgroup.id,
+        diagramId: currentDiagram.id,
+        partId: activePartId,
+      }),
+      backLabel: locale === "zh-CN" ? "返回车型选择" : "Back to vehicle selection",
+      breadcrumbs: [{ label: vehicleContextLabel }],
+    }),
+    [
+      activePartId,
+      currentDiagram.id,
+      currentGroup.id,
+      currentSubgroup.id,
+      currentVehicle.id,
+      locale,
+      vehicleContextLabel,
+    ],
+  );
 
   const groupTreeLabel = locale === "zh-CN" ? "分组树" : "Group tree";
   const diagramListLabel = locale === "zh-CN" ? "图例列表" : "Diagram list";
   const nextLabel = locale === "zh-CN" ? "下一步" : "Next";
+
+  useEpcHeader(headerConfig);
 
   function toggleGroup(groupId: string) {
     setOpenGroupIds((current) => {
@@ -114,7 +132,6 @@ export function EpcGroupPage({ locale }: EpcGroupPageProps) {
                       className={`epc-group-tree-parent ${isCurrentGroup ? "is-active" : ""}`}
                       onClick={() => toggleGroup(group.id)}
                     >
-                      <span className="epc-stack-accent" style={{ background: group.accent }} />
                       <strong>{getText(locale, group.name)}</strong>
                       <ChevronDown
                         size={16}
@@ -181,9 +198,7 @@ export function EpcGroupPage({ locale }: EpcGroupPageProps) {
                       <span>{locale === "zh-CN" ? "图例缩略图" : "Diagram preview"}</span>
                     </div>
                     <div className="epc-group-diagram-copy">
-                      <strong>
-                        {diagram.code} - {getText(locale, diagram.name)}
-                      </strong>
+                      <strong>{getText(locale, diagram.name)}</strong>
                     </div>
                   </button>
                 ))}
