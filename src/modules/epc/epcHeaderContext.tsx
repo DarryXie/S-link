@@ -9,6 +9,8 @@ export type EpcHeaderConfig = {
   backFallbackTo: string;
   backLabel: string;
   breadcrumbs: EpcHeaderItem[];
+  fromAssistant?: boolean;
+  assistantFocus?: string | null;
 };
 
 const EpcHeaderContext = createContext<Dispatch<SetStateAction<EpcHeaderConfig | null>> | null>(null);

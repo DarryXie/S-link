@@ -46,6 +46,8 @@ export function EpcHomePage({ locale }: EpcHomePageProps) {
       backFallbackTo: "/",
       backLabel: locale === "zh-CN" ? "返回系统首页" : "Back to overview",
       breadcrumbs: [],
+      fromAssistant: searchParams.get("source") === "assistant",
+      assistantFocus: searchParams.get("focus"),
     }),
     [locale],
   );

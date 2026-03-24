@@ -53,6 +53,8 @@ export function EpcWizardPage({ locale }: EpcWizardPageProps) {
       backFallbackTo: "/epc",
       backLabel: locale === "zh-CN" ? "返回 EPC 首页" : "Back to EPC home",
       breadcrumbs: [{ label: vehicleContextLabel }],
+      fromAssistant: searchParams.get("source") === "assistant",
+      assistantFocus: searchParams.get("focus"),
     }),
     [locale, vehicleContextLabel],
   );

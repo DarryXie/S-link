@@ -163,6 +163,8 @@ export function EpcWorkbenchPage({ locale, onAddToCart, cartLines }: EpcWorkbenc
       ),
       backLabel: locale === "zh-CN" ? "返回查询向导" : "Back to guide",
       breadcrumbs: [{ label: workbenchContextLabel }],
+      fromAssistant: searchParams.get("source") === "assistant",
+      assistantFocus: searchParams.get("focus"),
     }),
     [activePartId, currentDiagram.id, currentGroup.id, currentSubgroup.id, currentVehicle.id, entryVin, locale, workbenchContextLabel],
   );

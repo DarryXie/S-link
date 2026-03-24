@@ -55,6 +55,8 @@ export function EpcGroupPage({ locale }: EpcGroupPageProps) {
       }),
       backLabel: locale === "zh-CN" ? "返回车型选择" : "Back to vehicle selection",
       breadcrumbs: [{ label: vehicleContextLabel }],
+      fromAssistant: searchParams.get("source") === "assistant",
+      assistantFocus: searchParams.get("focus"),
     }),
     [
       activePartId,

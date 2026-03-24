@@ -24,6 +24,7 @@ import {
   type Locale,
   type PanelName,
 } from "../../content";
+import { EpcEntryNotice } from "../epc/EpcEntryNotice";
 import { EpcHeaderProvider, type EpcHeaderConfig } from "../epc/epcHeaderContext";
 
 type MainLayoutProps = {
@@ -181,6 +182,11 @@ export function MainLayout({
                           )}
                         </div>
                       ))}
+                      {epcHeader.fromAssistant ? (
+                        <div className="epc-breadcrumb-item epc-breadcrumb-ai">
+                          <EpcEntryNotice locale={locale} focus={epcHeader.assistantFocus} />
+                        </div>
+                      ) : null}
                     </section>
                   </div>
                 </div>

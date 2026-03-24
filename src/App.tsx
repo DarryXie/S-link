@@ -20,6 +20,7 @@ import { OrdersPage } from "./modules/orders/OrdersPage";
 
 const localeStorageKey = "s-link.locale";
 const accentStorageKey = "s-link.accent";
+
 const seededVehicle = {
   vehicleId: "seed-demo-vehicle",
   source: "vehicle" as const,
@@ -102,7 +103,7 @@ export default function App() {
   const copy = appMessages[locale];
   const cartCount = cartLines.reduce((sum, item) => sum + item.quantity, 0);
 
-  function handleAddToCart(nextLine: CartLine) {
+  function mergeCartLine(nextLine: CartLine, openCart: boolean) {
     setCartLines((current) => {
       const existing = current.find(
         (item) => item.sku === nextLine.sku && item.bindingKey === nextLine.bindingKey,
@@ -127,7 +128,18 @@ export default function App() {
           : item,
       );
     });
-    setActivePanel("cart");
+
+    if (openCart) {
+      setActivePanel("cart");
+    }
+  }
+
+  function handleAddToCart(nextLine: CartLine) {
+    mergeCartLine(nextLine, true);
+  }
+
+  function handleAddToCartQuietly(nextLine: CartLine) {
+    mergeCartLine(nextLine, false);
   }
 
   function handleToggleLine(lineId: string) {
@@ -227,6 +239,7 @@ export default function App() {
         copy={copy}
         isOpen={activePanel === "assistant"}
         onClose={() => setActivePanel(null)}
+        onAddToCart={handleAddToCartQuietly}
       />
       <CartDrawer
         locale={locale}
@@ -240,12 +253,8 @@ export default function App() {
         onQuantityChange={handleQuantityChange}
         onDeleteLine={handleDeleteLine}
       />
-      {activePanel ? (
-        <button
-          aria-label="close overlay"
-          className="scrim"
-          onClick={() => setActivePanel(null)}
-        />
+      {activePanel === "cart" ? (
+        <button aria-label="close overlay" className="scrim" onClick={() => setActivePanel(null)} />
       ) : null}
     </>
   );

@@ -82,8 +82,8 @@ export function CartDrawer({
     currency: locale === "zh-CN" ? "CNY" : "USD",
     maximumFractionDigits: 0,
   });
-  const quoteLabel = locale === "zh-CN" ? "去询价" : "Request Quote";
-  const orderLabel = locale === "zh-CN" ? "去下单" : "Place Order";
+  const quoteLabel = locale === "zh-CN" ? "发起询价" : "Request quote";
+  const orderLabel = locale === "zh-CN" ? "生成订单" : "Create order";
   const selectedQuantityLabel = locale === "zh-CN" ? "已选" : "Selected";
   const unitLabel = locale === "zh-CN" ? "件" : "pcs";
   const deleteLabel = locale === "zh-CN" ? "删除" : "Delete";
@@ -195,7 +195,9 @@ export function CartDrawer({
                                 type="button"
                                 className="icon-button cart-mini-button"
                                 onClick={() => onQuantityChange(item.id, item.quantity - 1)}
-                                aria-label={locale === "zh-CN" ? "减少数量" : "Decrease quantity"}
+                                aria-label={
+                                  locale === "zh-CN" ? "减少数量" : "Decrease quantity"
+                                }
                               >
                                 <Minus size={14} />
                               </button>
@@ -204,7 +206,9 @@ export function CartDrawer({
                                 type="button"
                                 className="icon-button cart-mini-button"
                                 onClick={() => onQuantityChange(item.id, item.quantity + 1)}
-                                aria-label={locale === "zh-CN" ? "增加数量" : "Increase quantity"}
+                                aria-label={
+                                  locale === "zh-CN" ? "增加数量" : "Increase quantity"
+                                }
                               >
                                 <Plus size={14} />
                               </button>
