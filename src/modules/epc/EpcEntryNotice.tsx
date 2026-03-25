@@ -19,6 +19,7 @@ export function EpcEntryNotice({ locale, focus }: EpcEntryNoticeProps) {
   return (
     <span className="epc-entry-chip" title={label} aria-label={label}>
       <Bot size={14} />
+      <span>AI</span>
     </span>
   );
 }

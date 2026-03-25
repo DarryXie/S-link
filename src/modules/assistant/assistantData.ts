@@ -30,6 +30,8 @@ export type AssistantAttachment = {
   mimeType?: string;
   dataUrl?: string;
   textContent?: string;
+  recognizedText?: string;
+  recognizedVin?: string;
 };
 
 export type AssistantVehicle = CartVehicleContext & {
@@ -426,8 +428,20 @@ export function extractVin(text: string, attachments: AssistantAttachment[]) {
     return match[0];
   }
 
-  if (attachments.some((item) => item.tag === "vin")) {
-    return mockVehicles[0].vin;
+  for (const attachment of attachments) {
+    const recognizedVin = attachment.recognizedVin?.toUpperCase().match(/\b[A-HJ-NPR-Z0-9]{17}\b/)?.[0];
+
+    if (recognizedVin) {
+      return recognizedVin;
+    }
+
+    const recognizedTextVin = attachment.recognizedText
+      ?.toUpperCase()
+      .match(/\b[A-HJ-NPR-Z0-9]{17}\b/)?.[0];
+
+    if (recognizedTextVin) {
+      return recognizedTextVin;
+    }
   }
 
   return "";
@@ -440,7 +454,14 @@ export function findVehicleCandidate(text: string, attachments: AssistantAttachm
     return pickVehicleByVin(vin);
   }
 
-  const normalized = text.toLowerCase();
+  const normalized = [
+    text,
+    ...attachments
+      .map((item) => item.recognizedText?.trim())
+      .filter((item): item is string => Boolean(item)),
+  ]
+    .join(" ")
+    .toLowerCase();
   const manual =
     mockVehicles.find((vehicle) =>
       [vehicle.brand["zh-CN"], vehicle.brand["en-US"], vehicle.series["zh-CN"], vehicle.series["en-US"]]

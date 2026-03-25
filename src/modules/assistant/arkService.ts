@@ -1,8 +1,12 @@
 import {
   assistantText,
   type AssistantAttachment,
+  type AssistantAttachmentTag,
   type AssistantCollisionAnalysis,
   type AssistantCollisionMessage,
+  type AssistantEpcItem,
+  type AssistantEpcMessage,
+  type AssistantFlow,
   type AssistantLocaleText,
   type AssistantPartsItem,
   type AssistantPartsMessage,
@@ -18,6 +22,19 @@ type PartsRecognitionPayload = {
     quantity?: number;
     part_number?: string;
     note?: string;
+  }>;
+};
+
+type EpcRecognitionPayload = {
+  summary?: string;
+  items?: Array<{
+    part_name?: string;
+    part_number?: string;
+    diagram_code?: string;
+    diagram_name?: string;
+    location?: string;
+    quantity?: number;
+    price?: number;
   }>;
 };
 
@@ -45,8 +62,20 @@ type ReportPayload = {
   caution_notes?: string[];
 };
 
+type AttachmentRecognitionPayload = {
+  vin?: string;
+  attachments?: Array<{
+    index?: number;
+    tag?: AssistantAttachmentTag;
+    summary?: string;
+    extracted_text?: string;
+    vin_candidate?: string;
+  }>;
+};
+
 const defaultArkBaseUrl = "https://ark.cn-beijing.volces.com/api/v3";
 const defaultArkModel = "doubao-seed-2-0-lite-260215";
+const vinRegex = /\b[A-HJ-NPR-Z0-9]{17}\b/i;
 
 function createId(prefix: string) {
   return `${prefix}-${crypto.randomUUID()}`;
@@ -150,6 +179,42 @@ function buildHtmlList(items: string[]) {
   return items.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
 }
 
+function normalizeAttachmentTag(
+  value: AssistantAttachmentTag | string | undefined,
+  fallback: AssistantAttachmentTag,
+): AssistantAttachmentTag {
+  return value === "vin" || value === "parts" || value === "accident" || value === "generic"
+    ? value
+    : fallback;
+}
+
+function fallbackRecognizeAttachments(attachments: AssistantAttachment[]) {
+  return attachments.map((attachment) => {
+    const recognizedVin =
+      attachment.recognizedVin?.toUpperCase().match(vinRegex)?.[0] ??
+      attachment.textContent?.toUpperCase().match(vinRegex)?.[0] ??
+      "";
+
+    let tag = attachment.tag;
+    const haystack = `${attachment.name}\n${attachment.textContent ?? ""}`.toLowerCase();
+
+    if (recognizedVin || /vin|车架号|车辆识别代号/.test(haystack)) {
+      tag = "vin";
+    } else if (/清单|配件|零件|报价|part|parts|quote|qty|quantity|list/.test(haystack)) {
+      tag = "parts";
+    } else if (/事故|碰撞|剐蹭|受损|定损|crash|collision|damage|dent|impact/.test(haystack)) {
+      tag = "accident";
+    }
+
+    return {
+      ...attachment,
+      tag,
+      recognizedVin: recognizedVin || attachment.recognizedVin,
+      recognizedText: attachment.textContent?.trim() || attachment.recognizedText,
+    };
+  });
+}
+
 function getArkApiKey() {
   return import.meta.env.VITE_ARK_API_KEY?.trim() ?? "";
 }
@@ -190,6 +255,25 @@ function buildInputContent(
         image_url: attachment.dataUrl,
       });
     }
+
+    if (attachment.recognizedVin?.trim()) {
+      content.push({
+        type: "input_text",
+        text: `附件 ${index + 1}（${attachment.name}）已识别到 VIN：${attachment.recognizedVin.trim()}`,
+      });
+    }
+
+    if (
+      attachment.recognizedText?.trim() &&
+      attachment.recognizedText.trim() !== attachment.textContent?.trim()
+    ) {
+      content.push({
+        type: "input_text",
+        text: `附件 ${index + 1}（${attachment.name}）识别摘要：\n${attachment.recognizedText
+          .trim()
+          .slice(0, 4000)}`,
+      });
+    }
   });
 
   return content;
@@ -205,7 +289,6 @@ function extractOutputText(payload: unknown): string {
     output?: Array<{
       content?: Array<{
         text?: string;
-        type?: string;
       }>;
     }>;
   };
@@ -295,6 +378,89 @@ export function isArkConfigured() {
   return Boolean(getArkApiKey());
 }
 
+export async function recognizeAssistantAttachments(input: {
+  flow: AssistantFlow;
+  text: string;
+  attachments: AssistantAttachment[];
+}) {
+  if (input.attachments.length === 0) {
+    return {
+      attachments: input.attachments,
+      vin: "",
+    };
+  }
+
+  if (!isArkConfigured()) {
+    const fallback = fallbackRecognizeAttachments(input.attachments);
+
+    return {
+      attachments: fallback,
+      vin: fallback.find((item) => item.recognizedVin)?.recognizedVin ?? "",
+    };
+  }
+
+  const payload = await callArkJson<AttachmentRecognitionPayload>(
+    [
+      "你是 S-Link 的附件识别助手。",
+      "请逐个识别用户上传的附件，判断每个附件属于哪一类：vin、parts、accident、generic。",
+      "vin 表示 VIN 码图片或 VIN 相关证据；parts 表示配件清单、报价单、零件表；accident 表示事故图、碰撞图、受损照片；generic 表示其他无关或无法判断的附件。",
+      "如果附件里能清楚读到 17 位标准 VIN，请提取到 vin_candidate。",
+      "如果附件里有可直接复用的关键信息，请写入 extracted_text，尽量简短准确。",
+      "只返回 JSON。",
+      'JSON 结构：{"vin":"string","attachments":[{"index":1,"tag":"vin|parts|accident|generic","summary":"string","extracted_text":"string","vin_candidate":"string"}]}',
+    ].join("\n"),
+    [
+      `当前流程：${input.flow}`,
+      input.text ? `用户文本：${input.text}` : "用户文本为空，仅上传了附件。",
+      `附件数量：${input.attachments.length}`,
+      ...input.attachments.map((attachment, index) => {
+        const details = [
+          `附件 ${index + 1}`,
+          `名称：${attachment.name}`,
+          `类型：${attachment.kind}`,
+          attachment.mimeType ? `MIME：${attachment.mimeType}` : "",
+          attachment.textContent?.trim()
+            ? `已有文本：${attachment.textContent.trim().slice(0, 4000)}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" / ");
+
+        return details;
+      }),
+    ].join("\n"),
+    input.attachments,
+  );
+
+  const recognized = input.attachments.map((attachment, index) => {
+    const recognizedItem = payload.attachments?.find((item) => item.index === index + 1);
+    const recognizedVin =
+      recognizedItem?.vin_candidate?.toUpperCase().match(vinRegex)?.[0] ??
+      attachment.recognizedVin;
+    const recognizedText =
+      recognizedItem?.extracted_text?.trim() ||
+      attachment.textContent?.trim() ||
+      attachment.recognizedText;
+
+    return {
+      ...attachment,
+      tag: normalizeAttachmentTag(recognizedItem?.tag, attachment.tag),
+      recognizedVin,
+      recognizedText,
+    };
+  });
+
+  const vin =
+    payload.vin?.toUpperCase().match(vinRegex)?.[0] ??
+    recognized.find((item) => item.recognizedVin)?.recognizedVin ??
+    "";
+
+  return {
+    attachments: recognized,
+    vin,
+  };
+}
+
 export async function generateAssistantPartsMessage(
   input: {
     vehicle: AssistantVehicle;
@@ -318,12 +484,12 @@ export async function generateAssistantPartsMessage(
     [
       `车辆信息：${input.vehicle.brand["zh-CN"]} ${input.vehicle.series["zh-CN"]} ${input.vehicle.year} ${input.vehicle.model["zh-CN"]}`,
       input.vehicle.vin ? `VIN：${input.vehicle.vin}` : "",
-      input.text ? `用户补充：${input.text}` : "用户未提供额外文字，只上传了附件。",
+      input.text ? `用户补充：${input.text}` : "用户未提供额外文字，仅上传了附件。",
       input.currentItems.length > 0
         ? `当前已识别配件：${input.currentItems
             .map((item) => `${item.name["zh-CN"]} x${item.quantity}`)
             .join("；")}`
-        : "当前无已识别配件。",
+        : "当前尚无已识别配件。",
     ]
       .filter(Boolean)
       .join("\n"),
@@ -351,8 +517,71 @@ export async function generateAssistantPartsMessage(
     role: "assistant",
     kind: "parts-result",
     createdAt,
-    summary: makeLocaleText(payload.summary, `已识别 ${merged.length} 条配件项目`),
+    summary: makeLocaleText(payload.summary, `已识别 ${merged.length} 条配件项目。`),
     items: merged,
+  };
+}
+
+export async function generateAssistantEpcMessage(
+  input: {
+    vehicle: AssistantVehicle;
+    text: string;
+    attachments: AssistantAttachment[];
+  },
+  createdAt: number,
+): Promise<AssistantEpcMessage> {
+  const payload = await callArkJson<EpcRecognitionPayload>(
+    [
+      "你是 S-Link 的 EPC 配件定位助手。",
+      "请根据车型信息、用户描述和附件内容，输出最相关的 EPC 配件候选项。",
+      "规则：",
+      "1. 必须尽量保留方位和位置信息，例如左后门、后保险杠、右后翼子板。",
+      "2. 不要把后部件错误识别成前部件，也不要把门类部件误识别成灯具或保险杠。",
+      "3. diagram_code、diagram_name、location 可以是便于前台预览的结构化名称，不要求真实 EPC 编码。",
+      "4. quantity 默认 1；price 没把握时填 0。",
+      "5. 只输出 JSON。",
+      'JSON 结构：{"summary":"string","items":[{"part_name":"string","part_number":"string","diagram_code":"string","diagram_name":"string","location":"string","quantity":1,"price":0}]}',
+    ].join("\n"),
+    [
+      `车辆信息：${input.vehicle.brand["zh-CN"]} ${input.vehicle.series["zh-CN"]} ${input.vehicle.year} ${input.vehicle.model["zh-CN"]}`,
+      input.vehicle.vin ? `VIN：${input.vehicle.vin}` : "",
+      input.text ? `查询内容：${input.text}` : "用户未提供额外文字，仅上传了附件。",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    input.attachments,
+  );
+
+  const items: AssistantEpcItem[] = (payload.items ?? [])
+    .filter((item) => item.part_name?.trim())
+    .map((item, index) => ({
+      id: createId("epc"),
+      sku: normalizeSku(item.part_number, "AI-EPC", index),
+      name: makeLocaleText(item.part_name, "EPC 配件"),
+      diagramCode: item.diagram_code?.trim() || `AI-DIAG-${String(index + 1).padStart(2, "0")}`,
+      diagramName: makeLocaleText(item.diagram_name, "智能定位图例"),
+      location: makeLocaleText(item.location, "待补充安装位置"),
+      price:
+        typeof item.price === "number" && Number.isFinite(item.price) && item.price > 0
+          ? Math.round(item.price)
+          : 0,
+      defaultQuantity:
+        typeof item.quantity === "number" && Number.isFinite(item.quantity) && item.quantity > 0
+          ? Math.max(1, Math.round(item.quantity))
+          : 1,
+    }));
+
+  if (items.length === 0) {
+    throw new Error("EPC_EMPTY_RESULT");
+  }
+
+  return {
+    id: createId("epc-card"),
+    role: "assistant",
+    kind: "epc-result",
+    createdAt,
+    query: makeLocaleText(input.text || "配件定位", input.text || "Part lookup"),
+    items,
   };
 }
 
@@ -367,12 +596,12 @@ export async function generateAssistantCollisionMessage(
 ): Promise<AssistantCollisionMessage> {
   const payload = await callArkJson<CollisionRecognitionPayload>(
     [
-      "你是 S-Link 的事故车碰撞分析助手。",
-      "请结合碰撞图片和文字描述，输出结构化分析结果。",
+      "你是 S-Link 的事故碰撞分析助手。",
+      "请结合事故图片和文字描述，输出结构化碰撞分析结果。",
       "规则：",
       "1. 只把明确能看见的内容放在 visible_damage_parts。",
       "2. 隐藏损伤和推测项放到 possible_internal_damage 或 inspection_items。",
-      "3. confidence 范围为 0 到 1。",
+      "3. confidence 范围是 0 到 1。",
       "4. risk_estimate_cny 是初步风险预估金额，不是正式报价。",
       "5. 只输出 JSON。",
       'JSON 结构：{"summary":"string","accident_position":"string","visible_damage_parts":["string"],"possible_internal_damage":["string"],"inspection_items":["string"],"risk_level":"low|medium|high","risk_estimate_cny":9000,"confidence":0.82,"safety_notes":["string"]}',
@@ -380,7 +609,7 @@ export async function generateAssistantCollisionMessage(
     [
       `车辆信息：${input.vehicle.brand["zh-CN"]} ${input.vehicle.series["zh-CN"]} ${input.vehicle.year} ${input.vehicle.model["zh-CN"]}`,
       input.vehicle.vin ? `VIN：${input.vehicle.vin}` : "",
-      input.text ? `事故补充描述：${input.text}` : "用户未提供额外文字，只上传了事故图。",
+      input.text ? `事故补充描述：${input.text}` : "用户未提供额外文字，仅上传了事故附件。",
       input.previousAnalysis
         ? `上一轮分析摘要：${input.previousAnalysis.summary["zh-CN"]}`
         : "当前是第一次分析。",
@@ -433,7 +662,7 @@ export async function generateAssistantReportMessage(
       "请基于已有碰撞分析结果，输出一份适合前台预览的初步定损报告内容。",
       "规则：",
       "1. 语气专业、克制，不要夸张。",
-      "2. 不要写最终定损结论，明确这是一份初步报告。",
+      "2. 不要写最终定损结论，要明确这是初步报告。",
       "3. 只输出 JSON。",
       'JSON 结构：{"title":"string","summary":"string","accident_overview":"string","damage_conclusion":"string","visible_damage":["string"],"possible_damage":["string"],"inspection_items":["string"],"repair_advice":["string"],"caution_notes":["string"]}',
     ].join("\n"),
@@ -463,10 +692,14 @@ export async function generateAssistantReportMessage(
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${escapeHtml(titleText)}</title>
     <style>
       :root {
         color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
       }
       body {
         margin: 0;
@@ -607,7 +840,7 @@ export async function generateAssistantReportMessage(
             payload.repair_advice,
             input.replacementItems.length > 0
               ? input.replacementItems.map(
-                  (item) => `${item.name["zh-CN"]}：${item.advice["zh-CN"]}`,
+                  (item) => `${item.name["zh-CN"]}（${item.advice["zh-CN"]}）`,
                 )
               : ["建议结合拆检结果确认最终换件范围。"],
           ),

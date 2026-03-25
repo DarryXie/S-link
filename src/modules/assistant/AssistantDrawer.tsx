@@ -46,6 +46,7 @@ import {
   type AssistantCollisionAnalysis,
   type AssistantEpcItem,
   type AssistantFlow,
+  type AssistantGoalId,
   type AssistantLineSelection,
   type AssistantLocaleText,
   type AssistantMessage,
@@ -57,9 +58,11 @@ import {
 } from "./assistantData";
 import {
   generateAssistantCollisionMessage,
+  generateAssistantEpcMessage,
   generateAssistantPartsMessage,
   generateAssistantReportMessage,
   isArkConfigured,
+  recognizeAssistantAttachments,
 } from "./arkService";
 
 type AssistantDrawerProps = {
@@ -73,6 +76,12 @@ type AssistantDrawerProps = {
 type BusyState = {
   sessionId: string;
   label: AssistantLocaleText;
+};
+
+type PendingSendState = {
+  sessionId: string;
+  label: AssistantLocaleText;
+  messages: AssistantMessage[];
 };
 
 function makeText(locale: Locale, zh: string, en: string) {
@@ -183,7 +192,17 @@ function stripVinTokens(text: string) {
 }
 
 function hasPartsEvidence(text: string, attachments: AssistantAttachment[]) {
-  if (attachments.some((item) => item.tag !== "vin")) {
+  if (
+    attachments.some(
+      (item) =>
+        item.tag === "parts" ||
+        item.kind === "document" ||
+        Boolean(item.textContent?.trim()) ||
+        /(清单|配件|零件|订购|采购|数量|报价|part|parts|list|quote|qty|quantity)/i.test(
+          item.recognizedText ?? "",
+        ),
+    )
+  ) {
     return true;
   }
 
@@ -201,7 +220,11 @@ function hasPartsEvidence(text: string, attachments: AssistantAttachment[]) {
 function hasCollisionEvidence(text: string, attachments: AssistantAttachment[]) {
   if (
     attachments.some(
-      (item) => item.tag === "accident" || (item.kind === "image" && item.tag !== "vin"),
+      (item) =>
+        item.tag === "accident" ||
+        /(事故|碰撞|定损|受损|损伤|剐蹭|追尾|crash|collision|damage|dent|impact)/i.test(
+          item.recognizedText ?? "",
+        ),
     )
   ) {
     return true;
@@ -224,7 +247,10 @@ function hasStrongPartsEvidence(text: string, attachments: AssistantAttachment[]
       (item) =>
         item.tag === "parts" ||
         item.kind === "document" ||
-        Boolean(item.textContent?.trim()),
+        Boolean(item.textContent?.trim()) ||
+        /(清单|配件|零件|订购|采购|数量|报价|part|parts|list|quote|qty|quantity)/i.test(
+          item.recognizedText ?? "",
+        ),
     )
   ) {
     return true;
@@ -253,8 +279,137 @@ function hasStrongCollisionEvidence(text: string, attachments: AssistantAttachme
   return attachments.some(
     (item) =>
       item.tag === "accident" ||
+      /(事故|碰撞|定损|受损|损伤|剐蹭|追尾|crash|collision|damage|dent|impact)/i.test(
+        item.recognizedText ?? "",
+      ) ||
       /accident|damage|crash|碰撞|事故|定损|受损/i.test(item.name),
   );
+}
+
+function hasVinEvidence(text: string, attachments: AssistantAttachment[]) {
+  if (/\b[A-HJ-NPR-Z0-9]{17}\b/i.test(text)) {
+    return true;
+  }
+
+  return attachments.some(
+    (item) =>
+      item.tag === "vin" ||
+      Boolean(item.recognizedVin?.trim()) ||
+      /\b[A-HJ-NPR-Z0-9]{17}\b/i.test(item.recognizedText ?? ""),
+  );
+}
+
+function detectGoalFromAttachments(attachments: AssistantAttachment[]): AssistantGoalId | null {
+  if (attachments.some((item) => item.tag === "accident")) {
+    return "collision";
+  }
+
+  if (attachments.some((item) => item.tag === "parts")) {
+    return "parts-order";
+  }
+
+  if (attachments.some((item) => item.tag === "vin")) {
+    return "epc";
+  }
+
+  return null;
+}
+
+function buildMissingInputMessage(
+  flow: AssistantFlow,
+  text: string,
+  attachments: AssistantAttachment[],
+) {
+  const vinReady = hasVinEvidence(text, attachments);
+  const partsReady = hasPartsEvidence(text, attachments);
+  const collisionReady = hasCollisionEvidence(text, attachments);
+
+  if (flow === "parts-order") {
+    if (!vinReady && partsReady) {
+      return makeLocaleText(
+        "我已识别到配件清单内容，但还缺少 VIN 码或 VIN 图片。请补充后我先确认车型。",
+        "我已识别到配件清单内容，但还缺少 VIN 码或 VIN 图片。请补充后我先确认车型。",
+      );
+    }
+
+    if (vinReady && !partsReady) {
+      return makeLocaleText(
+        "我已识别到 VIN 或车型信息，但还缺少配件清单图片、文件或文字内容。请补充后我继续整理清单。",
+        "我已识别到 VIN 或车型信息，但还缺少配件清单图片、文件或文字内容。请补充后我继续整理清单。",
+      );
+    }
+
+    return makeLocaleText(
+      "请同时提供 VIN 码（或 VIN 图片）和配件清单图片、文件或文字内容。我会先确认车型，再整理清单。",
+      "请同时提供 VIN 码（或 VIN 图片）和配件清单图片、文件或文字内容。我会先确认车型，再整理清单。",
+    );
+  }
+
+  if (flow === "collision") {
+    if (!vinReady && collisionReady) {
+      return makeLocaleText(
+        "我已识别到事故图片或损伤信息，但还缺少 VIN 码或 VIN 图片。请补充后我先确认车型。",
+        "我已识别到事故图片或损伤信息，但还缺少 VIN 码或 VIN 图片。请补充后我先确认车型。",
+      );
+    }
+
+    if (vinReady && !collisionReady) {
+      return makeLocaleText(
+        "我已识别到 VIN 或车型信息，但还缺少事故图片或损伤描述。请补充后我继续分析碰撞情况。",
+        "我已识别到 VIN 或车型信息，但还缺少事故图片或损伤描述。请补充后我继续分析碰撞情况。",
+      );
+    }
+
+    return makeLocaleText(
+      "请同时提供 VIN 码（或 VIN 图片）和事故图片或损伤描述。我会先确认车型，再开始碰撞分析。",
+      "请同时提供 VIN 码（或 VIN 图片）和事故图片或损伤描述。我会先确认车型，再开始碰撞分析。",
+    );
+  }
+
+  return makeLocaleText(
+    "请输入 17 位 VIN，上传 VIN 图片，或直接描述车型信息。",
+    "请输入 17 位 VIN，上传 VIN 图片，或直接描述车型信息。",
+  );
+}
+
+function buildPostConfirmHint(
+  flow: AssistantFlow,
+  text: string,
+  attachments: AssistantAttachment[],
+) {
+  if (flow === "parts-order" && hasStrongPartsEvidence(text, attachments)) {
+    return makeLocaleText(
+      "我已同时识别到 VIN 和配件清单。确认车型后，我会直接开始整理配件清单。",
+      "我已同时识别到 VIN 和配件清单。确认车型后，我会直接开始整理配件清单。",
+    );
+  }
+
+  if (flow === "collision" && hasStrongCollisionEvidence(text, attachments)) {
+    return makeLocaleText(
+      "我已同时识别到 VIN 和事故信息。确认车型后，我会直接开始分析碰撞情况。",
+      "我已同时识别到 VIN 和事故信息。确认车型后，我会直接开始分析碰撞情况。",
+    );
+  }
+
+  return null;
+}
+
+function buildSendPendingText(text: string, attachments: AssistantAttachment[]) {
+  if (attachments.length > 0) {
+    return makeLocaleText(
+      "系统正在识别你刚刚上传的图片或文件，请稍候。",
+      "系统正在识别你刚刚上传的图片或文件，请稍候。",
+    );
+  }
+
+  if (text.trim()) {
+    return makeLocaleText(
+      "系统正在处理你的输入，请稍候。",
+      "系统正在处理你的输入，请稍候。",
+    );
+  }
+
+  return makeLocaleText("系统处理中，请稍候。", "系统处理中，请稍候。");
 }
 
 function sanitizeAttachmentForStorage(attachment: AssistantAttachment): AssistantAttachment {
@@ -537,25 +692,74 @@ function resolveAssistantEpcLink(
   vehicleBrand?: string,
   vehicleVin?: string,
 ) {
-  const matched = matchAssistantEpcPart(item, locale, vehicleBrand);
+  const normalized = [item.name[locale], item.location[locale], item.diagramName[locale], item.sku]
+    .join(" ")
+    .toLowerCase();
 
-  if (matched) {
-    return buildEpcPath(
-      "/epc/workbench",
-      {
-        vehicleId: matched.vehicle.id,
-        groupId: matched.group.id,
-        subgroupId: matched.subgroup.id,
-        diagramId: matched.diagram.id,
-        partId: matched.part.id,
-      },
-      vehicleVin
-        ? { vin: vehicleVin, source: "assistant", focus: item.sku }
-        : { source: "assistant", focus: item.sku },
-    );
+  let assistantDemo = "front-service-demo";
+  let assistantPart = "demo-front-service-main";
+  let assistantDiagramCode = "AI-DEMO-FRONT";
+  let assistantDiagramName = "前部外覆盖件演示图";
+
+  if (/(左后门|后门|rear door|left rear door)/.test(normalized)) {
+    assistantDemo = "rear-left-door-demo";
+    assistantPart = "demo-rear-left-door-main";
+    assistantDiagramCode = "AI-DEMO-DOOR-LR";
+    assistantDiagramName = "左后门钣金附件演示图";
+  } else if (/(后保险杠|rear bumper)/.test(normalized)) {
+    assistantDemo = "rear-bumper-demo";
+    assistantPart = "demo-rear-bumper-main";
+    assistantDiagramCode = "AI-DEMO-RR-BPR";
+    assistantDiagramName = "后保险杠组件演示图";
+  } else if (/(后组合灯|尾灯|后灯|rear lamp|tail lamp)/.test(normalized)) {
+    assistantDemo = "rear-lamp-demo";
+    assistantPart = "demo-rear-lamp-main";
+    assistantDiagramCode = "AI-DEMO-RR-LMP";
+    assistantDiagramName = "后部照明组件演示图";
   }
 
-  return resolveAssistantVehicleLink(vehicleBrand, vehicleVin);
+  const matched = matchAssistantEpcPart(item, locale, vehicleBrand);
+  const preferredVehicle =
+    matched?.vehicle ??
+    (epcVehicles.find((vehicle) =>
+      [vehicle.brand["zh-CN"], vehicle.brand["en-US"]]
+        .join(" ")
+        .toLowerCase()
+        .includes((vehicleBrand ?? "").toLowerCase()),
+    ) ?? epcVehicles[0]);
+  const targetGroup = preferredVehicle.groups[0];
+  const targetSubgroup = targetGroup.subgroups[0];
+  const targetDiagram = targetSubgroup.diagrams[0];
+  const targetPart = targetDiagram.parts[0];
+
+  return buildEpcPath(
+    "/epc/workbench",
+    {
+      vehicleId: preferredVehicle.id,
+      groupId: targetGroup.id,
+      subgroupId: targetSubgroup.id,
+      diagramId: targetDiagram.id,
+      partId: targetPart.id,
+    },
+    vehicleVin
+      ? {
+          vin: vehicleVin,
+          source: "assistant",
+          focus: item.sku,
+          assistantDemo,
+          assistantPart,
+          assistantDiagramCode,
+          assistantDiagramName,
+        }
+      : {
+          source: "assistant",
+          focus: item.sku,
+          assistantDemo,
+          assistantPart,
+          assistantDiagramCode,
+          assistantDiagramName,
+        },
+  );
 }
 
 function resolveVehiclePreviewLink(session?: AssistantSession) {
@@ -583,6 +787,7 @@ export function AssistantDrawer({
   const [draftAttachments, setDraftAttachments] = useState<AssistantAttachment[]>([]);
   const [feedback, setFeedback] = useState<AssistantLocaleText | null>(null);
   const [busyState, setBusyState] = useState<BusyState | null>(null);
+  const [pendingSendState, setPendingSendState] = useState<PendingSendState | null>(null);
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -628,7 +833,11 @@ export function AssistantDrawer({
     [sessions],
   );
   const activeBusyLabel =
-    busyState && activeSession?.id === busyState.sessionId ? busyState.label : null;
+    pendingSendState && activeSession?.id === pendingSendState.sessionId
+      ? pendingSendState.label
+      : busyState && activeSession?.id === busyState.sessionId
+        ? busyState.label
+        : null;
   const activeIsBusy = Boolean(activeBusyLabel);
 
   useEffect(() => {
@@ -693,6 +902,29 @@ export function AssistantDrawer({
     }
 
     setFeedback(message);
+  }
+
+  async function recognizeComposerAttachments(
+    flow: AssistantFlow,
+    text: string,
+    attachments: AssistantAttachment[],
+  ) {
+    if (attachments.length === 0) {
+      return attachments;
+    }
+
+    try {
+      const recognized = await recognizeAssistantAttachments({
+        flow,
+        text,
+        attachments,
+      });
+
+      return recognized.attachments;
+    } catch (error) {
+      notifyFallback(error);
+      return attachments;
+    }
   }
 
   async function handleFiles(files: FileList | null, source: "picker" | "paste") {
@@ -774,6 +1006,86 @@ export function AssistantDrawer({
       setBusyState((current) =>
         current?.sessionId === params.sessionId ? null : current,
       );
+    }
+  }
+
+  async function runEpcRecognition(params: {
+    sessionId: string;
+    vehicle: AssistantVehicle;
+    text: string;
+    attachments: AssistantAttachment[];
+  }) {
+    const progressMessage = createUiTextMessage(
+      "assistant",
+      makeLocaleText("系统正在定位 EPC 配件与图例，请稍候。", "系统正在定位 EPC 配件与图例，请稍候。"),
+    );
+
+    updateSessionById(params.sessionId, (session) => ({
+      ...session,
+      updatedAt: Date.now(),
+      pendingText: params.text,
+      pendingAttachments: params.attachments,
+      messages: [...session.messages, progressMessage],
+    }));
+    setBusyState({
+      sessionId: params.sessionId,
+      label: makeLocaleText("EPC 查询中", "EPC 查询中"),
+    });
+
+    try {
+      const epcMessage = await generateAssistantEpcMessage(
+        {
+          vehicle: params.vehicle,
+          text: params.text,
+          attachments: params.attachments,
+        },
+        Date.now(),
+      );
+
+      updateSessionById(params.sessionId, (session) => ({
+        ...session,
+        updatedAt: Date.now(),
+        pendingText: "",
+        pendingAttachments: [],
+        latestEpcItems: epcMessage.items,
+        status: makeLocaleText("已整理 EPC 建议", "已整理 EPC 建议"),
+        messages: [
+          ...session.messages,
+          epcMessage,
+          createUiTextMessage(
+            "assistant",
+            makeLocaleText(
+              "如果你想让我继续缩小范围，可以补充左右侧、安装位置、总成名称或用途。",
+              "如果你想让我继续缩小范围，可以补充左右侧、安装位置、总成名称或用途。",
+            ),
+          ),
+        ],
+      }));
+    } catch (error) {
+      const fallback = buildEpcResult(params.text, Date.now());
+
+      updateSessionById(params.sessionId, (session) => ({
+        ...session,
+        updatedAt: Date.now(),
+        pendingText: "",
+        pendingAttachments: [],
+        latestEpcItems: fallback.items,
+        status: makeLocaleText("已整理 EPC 建议", "已整理 EPC 建议"),
+        messages: [
+          ...session.messages,
+          fallback,
+          createUiTextMessage(
+            "assistant",
+            makeLocaleText(
+              "如果你想让我继续缩小范围，可以补充左右侧、安装位置、总成名称或用途。",
+              "如果你想让我继续缩小范围，可以补充左右侧、安装位置、总成名称或用途。",
+            ),
+          ),
+        ],
+      }));
+      notifyFallback(error);
+    } finally {
+      setBusyState((current) => (current?.sessionId === params.sessionId ? null : current));
     }
   }
 
@@ -916,15 +1228,42 @@ export function AssistantDrawer({
       return;
     }
     const text = (overrides?.text ?? draftText).trim();
-    const attachments = overrides?.attachments ?? draftAttachments;
+    let attachments = overrides?.attachments ?? draftAttachments;
     const shouldClearComposer = !overrides?.preserveComposer;
     if (!text && attachments.length === 0) {
       return;
     }
-    const userMessage = createUiTextMessage("user", createUserSummary(text, attachments), attachments);
     const sessionId = activeSession.id;
+    const optimisticUserMessage = createUiTextMessage(
+      "user",
+      createUserSummary(text, attachments),
+      attachments,
+    );
+    const pendingLabel = buildSendPendingText(text, attachments);
+
+    if (shouldClearComposer) {
+      clearComposer();
+    }
+
+    setPendingSendState({
+      sessionId,
+      label: pendingLabel,
+      messages: [
+        optimisticUserMessage,
+        createUiTextMessage("assistant", pendingLabel),
+      ],
+    });
+
+    attachments = await recognizeComposerAttachments(
+      activeSession.stage === "awaiting-goal" ? "welcome" : activeSession.flow,
+      text,
+      attachments,
+    );
+    setPendingSendState((current) => (current?.sessionId === sessionId ? null : current));
+
+    const userMessage = createUiTextMessage("user", createUserSummary(text, attachments), attachments);
     if (activeSession.stage === "awaiting-goal") {
-      const detected = detectGoalFromText(text);
+      const detected = detectGoalFromText(text) ?? detectGoalFromAttachments(attachments);
       if (!detected) {
         updateSessionById(sessionId, (session) => ({
           ...session,
@@ -941,9 +1280,6 @@ export function AssistantDrawer({
             ),
           ],
         }));
-        if (shouldClearComposer) {
-          clearComposer();
-        }
         return;
       }
       const nextSession = createSessionFromGoal(detected);
@@ -972,12 +1308,18 @@ export function AssistantDrawer({
             ...nextSession.messages,
             createVehicleConfirmMessage(vehicle, Date.now()),
           ];
+          const continuationHint = buildPostConfirmHint(detected, text, attachments);
+
+          if (continuationHint) {
+            nextSession.messages.push(createUiTextMessage("assistant", continuationHint));
+          }
+        } else {
+          nextSession.messages.push(
+            createUiTextMessage("assistant", buildMissingInputMessage(detected, text, attachments)),
+          );
         }
       }
       prependSession(nextSession);
-      if (shouldClearComposer) {
-        clearComposer();
-      }
       return;
     }
     if (
@@ -997,10 +1339,7 @@ export function AssistantDrawer({
           next.messages.push(
             createUiTextMessage(
               "assistant",
-              makeLocaleText(
-                "请输入 17 位 VIN，上传 VIN 图片，或直接描述车型信息。",
-                "请输入 17 位 VIN，上传 VIN 图片，或直接描述车型信息。",
-              ),
+              buildMissingInputMessage(session.flow, text, attachments),
             ),
           );
           return next;
@@ -1020,40 +1359,29 @@ export function AssistantDrawer({
           `${vehicle.vin ?? vehicle.series["en-US"]} / ${goalLabel(session.flow, "en-US")}`,
         );
         next.messages.push(createVehicleConfirmMessage(vehicle, Date.now()));
+        const continuationHint = buildPostConfirmHint(session.flow, text, attachments);
+
+        if (continuationHint) {
+          next.messages.push(createUiTextMessage("assistant", continuationHint));
+        }
         return next;
       });
-      if (shouldClearComposer) {
-        clearComposer();
-      }
       return;
     }
     if (activeSession.flow === "epc" && activeSession.stage === "awaiting-part-query") {
-      updateSessionById(sessionId, (session) => {
-        const epcMessage = buildEpcResult(text, Date.now());
-        return {
-          ...session,
-          updatedAt: Date.now(),
-          pendingText: "",
-          pendingAttachments: [],
-          latestEpcItems: epcMessage.items,
-          status: makeLocaleText("已整理 EPC 建议", "已整理 EPC 建议"),
-          messages: [
-            ...session.messages,
-            userMessage,
-            epcMessage,
-            createUiTextMessage(
-              "assistant",
-              makeLocaleText(
-                "如果你想让我继续缩小范围，可以补充左右侧、安装位置、总成名称或用途。",
-                "如果你想让我继续缩小范围，可以补充左右侧、安装位置、总成名称或用途。",
-              ),
-            ),
-          ],
-        };
+      updateSessionById(sessionId, (session) => ({
+        ...session,
+        updatedAt: Date.now(),
+        pendingText: text,
+        pendingAttachments: attachments,
+        messages: [...session.messages, userMessage],
+      }));
+      await runEpcRecognition({
+        sessionId,
+        vehicle: activeSession.vehicle!,
+        text,
+        attachments,
       });
-      if (shouldClearComposer) {
-        clearComposer();
-      }
       return;
     }
     if (activeSession.flow === "parts-order" && activeSession.stage === "awaiting-parts-append") {
@@ -1075,9 +1403,6 @@ export function AssistantDrawer({
             ),
           ],
         }));
-        if (shouldClearComposer) {
-          clearComposer();
-        }
         return;
       }
 
@@ -1088,9 +1413,6 @@ export function AssistantDrawer({
         pendingAttachments: attachments,
         messages: [...session.messages, userMessage],
       }));
-      if (shouldClearComposer) {
-        clearComposer();
-      }
       await runPartsRecognition({
         sessionId,
         vehicle: activeSession.vehicle!,
@@ -1119,9 +1441,6 @@ export function AssistantDrawer({
             ),
           ],
         }));
-        if (shouldClearComposer) {
-          clearComposer();
-        }
         return;
       }
 
@@ -1132,9 +1451,6 @@ export function AssistantDrawer({
         pendingAttachments: attachments,
         messages: [...session.messages, userMessage],
       }));
-      if (shouldClearComposer) {
-        clearComposer();
-      }
       await runCollisionAnalysis({
         sessionId,
         vehicle: activeSession.vehicle!,
@@ -1161,9 +1477,6 @@ export function AssistantDrawer({
         ),
       ],
     }));
-    if (shouldClearComposer) {
-      clearComposer();
-    }
   }
   async function handleConfirmVehicle() {
     if (!activeSession?.vehicle || activeIsBusy) {
@@ -1839,15 +2152,20 @@ export function AssistantDrawer({
 
   return (
     <aside className={`side-drawer assistant-drawer ${isOpen ? "is-open" : ""}`} aria-hidden={!isOpen}>
+      <button
+        type="button"
+        className="icon-button assistant-drawer-close"
+        onClick={onClose}
+        aria-label="close assistant"
+      >
+        <X size={18} />
+      </button>
       <div className="assistant-drawer-layout">
         <div className="assistant-rail">
           <div className="drawer-head">
             <div>
               <h2>{copy.assistant.title}</h2>
             </div>
-            <button type="button" className="icon-button" onClick={onClose} aria-label="close assistant">
-              <X size={18} />
-            </button>
           </div>
           <p className="drawer-description">{copy.assistant.description}</p>
           <button type="button" className="secondary-action assistant-new-button" onClick={startFreshConversation}>
@@ -1908,6 +2226,9 @@ export function AssistantDrawer({
           </div>
           <div ref={threadRef} className="assistant-thread">
             {activeSession?.messages.map((message) => renderMessage(message))}
+            {pendingSendState?.sessionId === activeSession?.id
+              ? pendingSendState.messages.map((message) => renderMessage(message))
+              : null}
           </div>
           <div className="assistant-composer" aria-busy={activeIsBusy}>
             <div className="assistant-quick-texts assistant-quick-texts-inline">

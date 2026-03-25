@@ -61,6 +61,12 @@ type WorkbenchDemoPart = {
   supersession: string[];
 };
 
+type AssistantDemoConfig = {
+  diagramCode: string;
+  diagramName: ReturnType<typeof text>;
+  parts: WorkbenchDemoPart[];
+};
+
 const demoIllustrationSrc = new URL("../../../mock/illustration/001.png", import.meta.url).href;
 
 const screenshotWorkbenchDemoParts: WorkbenchDemoPart[] = [
@@ -106,6 +112,221 @@ const screenshotWorkbenchDemoParts: WorkbenchDemoPart[] = [
   supersession: [part.sku],
 }));
 
+function createAssistantDemoParts(
+  prefix: string,
+  specs: Array<{
+    hotspot: string;
+    sku: string;
+    side?: string;
+    zh: string;
+    en: string;
+    noteZh: string;
+    noteEn: string;
+    usage: number;
+    price: number;
+    x: number;
+    y: number;
+  }>,
+) {
+  return specs.map((part) => ({
+    id: `${prefix}-${part.sku}`,
+    hotspot: part.hotspot,
+    sku: part.sku,
+    side: part.side ?? "",
+    purpose: part.side ? `${part.side} / AI DEMO` : "AI DEMO",
+    name: text(part.zh, part.en),
+    note: text(part.noteZh, part.noteEn),
+    usage: part.usage,
+    packSize: 1,
+    price: part.price,
+    hotspotX: part.x,
+    hotspotY: part.y,
+    images: [`${part.sku} 位置示意`, `${part.sku} 结构示意`, `${part.sku} 安装示意`],
+    applicability: [
+      {
+        code: "AI-DEMO",
+        model: text("智能助手 EPC 演示", "Assistant EPC demo"),
+        brand: text("EPC Demo", "EPC Demo"),
+      },
+    ],
+    supersession: [part.sku],
+  }));
+}
+
+const assistantWorkbenchDemos: Record<string, AssistantDemoConfig> = {
+  "front-service-demo": {
+    diagramCode: "AI-DEMO-FRONT",
+    diagramName: text("前部外覆盖件演示图", "Front body demo"),
+    parts: createAssistantDemoParts("demo-front-service", [
+      {
+        hotspot: "01",
+        sku: "AI-FRONT-001",
+        zh: "前保险杠总成",
+        en: "Front bumper assembly",
+        noteZh: "智能助手演示定位到前保险杠主件",
+        noteEn: "Assistant demo focused on the front bumper main part",
+        usage: 1,
+        price: 980,
+        x: 18,
+        y: 26,
+      },
+      {
+        hotspot: "02",
+        sku: "AI-FRONT-002",
+        zh: "左前灯支架",
+        en: "Left headlamp bracket",
+        noteZh: "与前部外覆盖件联动展示",
+        noteEn: "Shown together with the front body demo",
+        usage: 1,
+        price: 260,
+        x: 37,
+        y: 24,
+      },
+      {
+        hotspot: "03",
+        sku: "AI-FRONT-003",
+        zh: "前格栅",
+        en: "Front grille",
+        noteZh: "用于演示前脸相关 EPC 图例",
+        noteEn: "Used to demo front fascia EPC context",
+        usage: 1,
+        price: 360,
+        x: 58,
+        y: 24,
+      },
+    ]),
+  },
+  "rear-bumper-demo": {
+    diagramCode: "AI-DEMO-RR-BPR",
+    diagramName: text("后保险杠组件演示图", "Rear bumper demo"),
+    parts: createAssistantDemoParts("demo-rear-bumper", [
+      {
+        hotspot: "01",
+        sku: "AI-REAR-001",
+        zh: "后保险杠",
+        en: "Rear bumper",
+        noteZh: "智能助手演示定位到后保险杠主件",
+        noteEn: "Assistant demo focused on the rear bumper main part",
+        usage: 1,
+        price: 1120,
+        x: 19,
+        y: 67,
+      },
+      {
+        hotspot: "02",
+        sku: "AI-REAR-002",
+        zh: "后保险杠侧支架",
+        en: "Rear bumper side bracket",
+        noteZh: "用于演示后部附件高亮",
+        noteEn: "Used to demo rear attachment highlighting",
+        usage: 2,
+        price: 180,
+        x: 41,
+        y: 64,
+      },
+      {
+        hotspot: "03",
+        sku: "AI-REAR-003",
+        zh: "后防撞梁",
+        en: "Rear reinforcement bar",
+        noteZh: "用于演示后杠延伸部件",
+        noteEn: "Used to demo related rear bumper structure",
+        usage: 1,
+        price: 520,
+        x: 66,
+        y: 62,
+      },
+    ]),
+  },
+  "rear-lamp-demo": {
+    diagramCode: "AI-DEMO-RR-LMP",
+    diagramName: text("后部照明组件演示图", "Rear lamp demo"),
+    parts: createAssistantDemoParts("demo-rear-lamp", [
+      {
+        hotspot: "01",
+        sku: "AI-LAMP-001",
+        zh: "后组合尾灯（后灯）",
+        en: "Rear combination lamp",
+        noteZh: "智能助手演示定位到后部灯具主件",
+        noteEn: "Assistant demo focused on the rear lamp main part",
+        usage: 1,
+        price: 860,
+        x: 76,
+        y: 31,
+      },
+      {
+        hotspot: "02",
+        sku: "AI-LAMP-002",
+        zh: "尾灯安装支架",
+        en: "Rear lamp bracket",
+        noteZh: "用于演示灯组附属件",
+        noteEn: "Used to demo lamp-related parts",
+        usage: 1,
+        price: 146,
+        x: 61,
+        y: 34,
+      },
+      {
+        hotspot: "03",
+        sku: "AI-LAMP-003",
+        zh: "尾灯密封垫",
+        en: "Rear lamp seal",
+        noteZh: "用于演示尾灯附件",
+        noteEn: "Used to demo rear lamp accessories",
+        usage: 1,
+        price: 92,
+        x: 47,
+        y: 36,
+      },
+    ]),
+  },
+  "rear-left-door-demo": {
+    diagramCode: "AI-DEMO-DOOR-LR",
+    diagramName: text("左后门钣金附件演示图", "Left rear door demo"),
+    parts: createAssistantDemoParts("demo-rear-left-door", [
+      {
+        hotspot: "01",
+        sku: "AI-DOOR-001",
+        side: "左后",
+        zh: "左后门总成",
+        en: "Left rear door assembly",
+        noteZh: "智能助手演示定位到左后门主件",
+        noteEn: "Assistant demo focused on the left rear door main part",
+        usage: 1,
+        price: 1680,
+        x: 30,
+        y: 42,
+      },
+      {
+        hotspot: "02",
+        sku: "AI-DOOR-002",
+        side: "左后",
+        zh: "左后门外把手",
+        en: "Left rear outer handle",
+        noteZh: "用于演示车门附件",
+        noteEn: "Used to demo door accessories",
+        usage: 1,
+        price: 210,
+        x: 48,
+        y: 46,
+      },
+      {
+        hotspot: "03",
+        sku: "AI-DOOR-003",
+        side: "左后",
+        zh: "左后门铰链组件",
+        en: "Left rear door hinge",
+        noteZh: "用于演示车门结构件",
+        noteEn: "Used to demo door structural parts",
+        usage: 2,
+        price: 126,
+        x: 21,
+        y: 33,
+      },
+    ]),
+  },
+};
+
 export function EpcWorkbenchPage({ locale, onAddToCart, cartLines }: EpcWorkbenchPageProps) {
   const ui = pageCopy[locale];
   const [searchParams] = useSearchParams();
@@ -120,10 +341,14 @@ export function EpcWorkbenchPage({ locale, onAddToCart, cartLines }: EpcWorkbenc
   } | null>(null);
 
   const entryVin = searchParams.get("vin") ?? "";
+  const assistantDemoKey = searchParams.get("assistantDemo") ?? "";
+  const assistantPartId = searchParams.get("assistantPart") ?? "";
+  const assistantDiagramCode = searchParams.get("assistantDiagramCode") ?? "";
+  const assistantDiagramNameParam = searchParams.get("assistantDiagramName") ?? "";
   const { activePartId, setActivePartId, currentVehicle, currentGroup, currentSubgroup, currentDiagram } =
     useEpcSelectionState(searchParams);
-
-  const displayedParts = screenshotWorkbenchDemoParts;
+  const assistantDemo = assistantWorkbenchDemos[assistantDemoKey] ?? null;
+  const displayedParts = assistantDemo?.parts ?? screenshotWorkbenchDemoParts;
   const [partDetailId, setPartDetailId] = useState<string | null>(null);
   const [quantityEditorId, setQuantityEditorId] = useState<string | null>(null);
   const [draftQuantity, setDraftQuantity] = useState(1);
@@ -134,6 +359,11 @@ export function EpcWorkbenchPage({ locale, onAddToCart, cartLines }: EpcWorkbenc
   const [isDraggingDiagram, setIsDraggingDiagram] = useState(false);
 
   const detailPart = displayedParts.find((part) => part.id === partDetailId) ?? null;
+  const displayDiagramCode = assistantDiagramCode || assistantDemo?.diagramCode || currentDiagram.code;
+  const displayDiagramName =
+    assistantDiagramNameParam
+      ? text(assistantDiagramNameParam, assistantDiagramNameParam)
+      : assistantDemo?.diagramName ?? currentDiagram.name;
   const vehicleContextLabel = buildVehicleContextLabel(locale, currentVehicle, entryVin);
   const workbenchContextLabel = `${vehicleContextLabel} / ${getText(locale, currentGroup.name)} / ${getText(locale, currentSubgroup.name)}`;
   const normalizedEntryVin = normalizeCartVin(entryVin);
@@ -172,10 +402,17 @@ export function EpcWorkbenchPage({ locale, onAddToCart, cartLines }: EpcWorkbenc
   useEpcHeader(headerConfig);
 
   useEffect(() => {
+    if (assistantPartId && displayedParts.some((part) => part.id === assistantPartId)) {
+      if (activePartId !== assistantPartId) {
+        setActivePartId(assistantPartId);
+      }
+      return;
+    }
+
     if (!displayedParts.some((part) => part.id === activePartId)) {
       setActivePartId(displayedParts[0]?.id ?? "");
     }
-  }, [activePartId, displayedParts, setActivePartId]);
+  }, [activePartId, assistantPartId, displayedParts, setActivePartId]);
 
   useEffect(() => {
     const row = rowRefs.current[activePartId];
@@ -213,8 +450,8 @@ export function EpcWorkbenchPage({ locale, onAddToCart, cartLines }: EpcWorkbenc
       subgroupId: currentSubgroup.id,
       diagramId: currentDiagram.id,
       title: text(
-        `${currentVehicle.series["zh-CN"]} / ${currentDiagram.name["zh-CN"]}`,
-        `${currentVehicle.series["en-US"]} / ${currentDiagram.name["en-US"]}`,
+        `${currentVehicle.series["zh-CN"]} / ${displayDiagramName["zh-CN"]}`,
+        `${currentVehicle.series["en-US"]} / ${displayDiagramName["en-US"]}`,
       ),
       trail: text(
         `${currentVehicle.brand["zh-CN"]} > ${currentVehicle.series["zh-CN"]} > ${currentGroup.name["zh-CN"]} > ${currentSubgroup.name["zh-CN"]}`,
@@ -228,7 +465,7 @@ export function EpcWorkbenchPage({ locale, onAddToCart, cartLines }: EpcWorkbenc
     const current = raw ? ((JSON.parse(raw) as HistoryEntry[]) ?? []) : [];
     const next = [entry, ...current.filter((item) => item.id !== entry.id)].slice(0, 6);
     window.localStorage.setItem(historyStorageKey, JSON.stringify(next));
-  }, [currentDiagram.id, currentGroup.id, currentSubgroup.id, currentVehicle.id, locale]);
+  }, [currentDiagram.id, currentGroup.id, currentSubgroup.id, currentVehicle.id, displayDiagramName, locale]);
 
   function clampScale(value: number) {
     return Math.min(3, Math.max(0.7, Number(value.toFixed(2))));
@@ -246,8 +483,8 @@ export function EpcWorkbenchPage({ locale, onAddToCart, cartLines }: EpcWorkbenc
     if (!part) return;
 
     const context = text(
-      `${currentGroup.name["zh-CN"]} / ${currentSubgroup.name["zh-CN"]} / ${currentDiagram.code}`,
-      `${currentGroup.name["en-US"]} / ${currentSubgroup.name["en-US"]} / ${currentDiagram.code}`,
+      `${currentGroup.name["zh-CN"]} / ${currentSubgroup.name["zh-CN"]} / ${displayDiagramCode}`,
+      `${currentGroup.name["en-US"]} / ${currentSubgroup.name["en-US"]} / ${displayDiagramCode}`,
     );
 
     onAddToCart({
@@ -308,8 +545,8 @@ export function EpcWorkbenchPage({ locale, onAddToCart, cartLines }: EpcWorkbenc
           <article className="diagram-stage">
             <div className="diagram-stage-head">
               <div className="diagram-title-row">
-                <strong>{currentDiagram.code}</strong>
-                <span>{getText(locale, currentDiagram.name)}</span>
+                <strong>{displayDiagramCode}</strong>
+                <span>{getText(locale, displayDiagramName)}</span>
               </div>
               <div className="diagram-stage-tools">
                 <span className="status-pill">{displayedParts.length} parts</span>
