@@ -1151,7 +1151,7 @@ button {
 
 .epc-home-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  grid-template-columns: minmax(0, 1.7fr) minmax(220px, 0.34fr);
   column-gap: 1rem;
   align-items: stretch;
   height: 100%;
@@ -1260,6 +1260,17 @@ button {
 
 .epc-search-action {
   min-height: 2.8rem;
+}
+
+.epc-search-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-shrink: 0;
+}
+
+.epc-search-actions .epc-search-action {
+  min-width: 5.8rem;
 }
 
 .epc-hero-aside {

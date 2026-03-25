@@ -3,6 +3,8 @@ import { type ClipboardEvent, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Locale } from "../../content";
 import {
+  blankAdvancedFilters,
+  type AdvancedFilters,
   EpcBackButton,
   brands,
   buildEpcPath,
@@ -23,6 +25,7 @@ type EpcHomePageProps = {
 };
 
 const demoImageVin = "LS6J3E2X3SK414831";
+const lower = (value: string) => value.trim().toLowerCase();
 
 function formatImageSize(size: number) {
   if (size >= 1024 * 1024) {
@@ -41,6 +44,10 @@ export function EpcHomePage({ locale }: EpcHomePageProps) {
   const [vinVehicleId, setVinVehicleId] = useState<string | null>(null);
   const [recognizedVin, setRecognizedVin] = useState("");
   const [pastedImage, setPastedImage] = useState<{ name: string; size: number } | null>(null);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [advancedTab, setAdvancedTab] = useState<"parts" | "diagrams">("parts");
+  const [advancedDraft, setAdvancedDraft] = useState<AdvancedFilters>(blankAdvancedFilters);
+  const [advancedCommitted, setAdvancedCommitted] = useState<AdvancedFilters>(blankAdvancedFilters);
   const headerConfig = useMemo(
     () => ({
       backFallbackTo: "/",
@@ -65,6 +72,57 @@ export function EpcHomePage({ locale }: EpcHomePageProps) {
       };
     });
   });
+
+  const advancedPartResults = useMemo(() => {
+    const filters = advancedCommitted;
+
+    return partHits.filter(({ vehicle, group, subgroup, diagram, part }) => {
+      if (filters.vin && !vehicle.vin.toLowerCase().includes(lower(filters.vin))) return false;
+      if (filters.brandId && vehicle.brandId !== filters.brandId) return false;
+      if (filters.seriesId && vehicle.seriesId !== filters.seriesId) return false;
+      if (filters.year && vehicle.year !== filters.year) return false;
+      if (filters.modelId && vehicle.id !== filters.modelId) return false;
+      if (filters.groupId && group.id !== filters.groupId) return false;
+      if (filters.subgroupId && subgroup.id !== filters.subgroupId) return false;
+      if (filters.diagramCode && !diagram.code.toLowerCase().includes(lower(filters.diagramCode))) return false;
+      if (filters.diagramName && !getText(locale, diagram.name).toLowerCase().includes(lower(filters.diagramName))) return false;
+      if (filters.partNumber && !part.sku.toLowerCase().includes(lower(filters.partNumber))) return false;
+      if (filters.partName && !getText(locale, part.name).toLowerCase().includes(lower(filters.partName))) return false;
+      return true;
+    });
+  }, [advancedCommitted, locale]);
+
+  const advancedDiagramResults = useMemo(() => {
+    const filters = advancedCommitted;
+
+    return diagramHits.filter(({ vehicle, group, subgroup, diagram }) => {
+      if (filters.vin && !vehicle.vin.toLowerCase().includes(lower(filters.vin))) return false;
+      if (filters.brandId && vehicle.brandId !== filters.brandId) return false;
+      if (filters.seriesId && vehicle.seriesId !== filters.seriesId) return false;
+      if (filters.year && vehicle.year !== filters.year) return false;
+      if (filters.modelId && vehicle.id !== filters.modelId) return false;
+      if (filters.groupId && group.id !== filters.groupId) return false;
+      if (filters.subgroupId && subgroup.id !== filters.subgroupId) return false;
+      if (filters.diagramCode && !diagram.code.toLowerCase().includes(lower(filters.diagramCode))) return false;
+      if (filters.diagramName && !getText(locale, diagram.name).toLowerCase().includes(lower(filters.diagramName))) return false;
+
+      if (filters.partNumber) {
+        const containsNumber = diagram.parts.some((part) =>
+          part.sku.toLowerCase().includes(lower(filters.partNumber)),
+        );
+        if (!containsNumber) return false;
+      }
+
+      if (filters.partName) {
+        const containsName = diagram.parts.some((part) =>
+          getText(locale, part.name).toLowerCase().includes(lower(filters.partName)),
+        );
+        if (!containsName) return false;
+      }
+
+      return true;
+    });
+  }, [advancedCommitted, locale]);
 
   function handleSearch() {
     const normalized = query.trim().toUpperCase();
@@ -186,9 +244,18 @@ export function EpcHomePage({ locale }: EpcHomePageProps) {
                   }
                 }}
               />
-              <button type="button" className="toolbar-ghost epc-search-action" onClick={handleSearch}>
-                {ui.searchButton}
-              </button>
+              <div className="epc-search-actions">
+                <button
+                  type="button"
+                  className="toolbar-ghost epc-search-action"
+                  onClick={() => setIsAdvancedOpen(true)}
+                >
+                  {ui.advancedButton}
+                </button>
+                <button type="button" className="toolbar-ghost epc-search-action" onClick={handleSearch}>
+                  {ui.searchButton}
+                </button>
+              </div>
             </label>
             <div className="epc-search-assist">
               {pastedImage ? (
@@ -375,6 +442,315 @@ export function EpcHomePage({ locale }: EpcHomePageProps) {
               );
             })()}
           </div>
+        </div>
+      ) : null}
+
+      {isAdvancedOpen ? (
+        <div className="epc-modal-wrap">
+          <aside className="epc-advanced-panel">
+            <div className="drawer-head">
+              <div>
+                <p className="section-kicker">{ui.advancedTitle}</p>
+                <h2>{ui.advancedHint}</h2>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setIsAdvancedOpen(false)}
+                aria-label="close advanced search"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="advanced-form-grid">
+              {(
+                [
+                  ["vin", ui.filterFields.vin],
+                  ["diagramCode", ui.filterFields.diagramCode],
+                  ["diagramName", ui.filterFields.diagramName],
+                  ["partNumber", ui.filterFields.partNumber],
+                  ["partName", ui.filterFields.partName],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} className="advanced-field">
+                  <span>{label}</span>
+                  <input
+                    value={advancedDraft[key]}
+                    onChange={(event) =>
+                      setAdvancedDraft((current) => ({
+                        ...current,
+                        [key]: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              ))}
+
+              <label className="advanced-field">
+                <span>{ui.filterFields.brand}</span>
+                <select
+                  value={advancedDraft.brandId}
+                  onChange={(event) =>
+                    setAdvancedDraft((current) => ({
+                      ...current,
+                      brandId: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">All</option>
+                  {brands.map((brand) => (
+                    <option key={brand.id} value={brand.id}>
+                      {getText(locale, brand.name)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="advanced-field">
+                <span>{ui.filterFields.series}</span>
+                <select
+                  value={advancedDraft.seriesId}
+                  onChange={(event) =>
+                    setAdvancedDraft((current) => ({
+                      ...current,
+                      seriesId: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">All</option>
+                  {[...new Map(vehicles.map((vehicle) => [vehicle.seriesId, vehicle])).values()].map((vehicle) => (
+                    <option key={vehicle.seriesId} value={vehicle.seriesId}>
+                      {getText(locale, vehicle.series)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="advanced-field">
+                <span>{ui.filterFields.year}</span>
+                <select
+                  value={advancedDraft.year}
+                  onChange={(event) =>
+                    setAdvancedDraft((current) => ({
+                      ...current,
+                      year: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">All</option>
+                  {[...new Set(vehicles.map((vehicle) => vehicle.year))].map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="advanced-field">
+                <span>{ui.filterFields.model}</span>
+                <select
+                  value={advancedDraft.modelId}
+                  onChange={(event) =>
+                    setAdvancedDraft((current) => ({
+                      ...current,
+                      modelId: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">All</option>
+                  {vehicles.map((vehicle) => (
+                    <option key={vehicle.id} value={vehicle.id}>
+                      {getText(locale, vehicle.series)} / {getText(locale, vehicle.model)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="advanced-field">
+                <span>{ui.filterFields.group}</span>
+                <select
+                  value={advancedDraft.groupId}
+                  onChange={(event) =>
+                    setAdvancedDraft((current) => ({
+                      ...current,
+                      groupId: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">All</option>
+                  {[...new Map(diagramHits.map(({ group }) => [group.id, group])).values()].map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {getText(locale, group.name)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="advanced-field">
+                <span>{ui.filterFields.subgroup}</span>
+                <select
+                  value={advancedDraft.subgroupId}
+                  onChange={(event) =>
+                    setAdvancedDraft((current) => ({
+                      ...current,
+                      subgroupId: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">All</option>
+                  {[...new Map(diagramHits.map(({ subgroup }) => [subgroup.id, subgroup])).values()].map((subgroup) => (
+                    <option key={subgroup.id} value={subgroup.id}>
+                      {getText(locale, subgroup.name)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="hero-actions">
+              <button
+                type="button"
+                className="primary-action"
+                onClick={() => setAdvancedCommitted(advancedDraft)}
+              >
+                {ui.query}
+              </button>
+              <button
+                type="button"
+                className="secondary-action"
+                onClick={() => {
+                  setAdvancedDraft(blankAdvancedFilters);
+                  setAdvancedCommitted(blankAdvancedFilters);
+                }}
+              >
+                {ui.reset}
+              </button>
+            </div>
+
+            <div className="advanced-tabs">
+              <button
+                type="button"
+                className={`filter-chip ${advancedTab === "parts" ? "is-active" : ""}`}
+                onClick={() => setAdvancedTab("parts")}
+              >
+                {ui.matchParts} ({advancedPartResults.length})
+              </button>
+              <button
+                type="button"
+                className={`filter-chip ${advancedTab === "diagrams" ? "is-active" : ""}`}
+                onClick={() => setAdvancedTab("diagrams")}
+              >
+                {ui.matchDiagrams} ({advancedDiagramResults.length})
+              </button>
+            </div>
+
+            <div className="advanced-results">
+              {advancedTab === "parts"
+                ? advancedPartResults.map(({ vehicle, group, subgroup, diagram, part }) => (
+                    <article key={`${vehicle.id}-${part.id}`} className="advanced-result-card">
+                      <div className="advanced-result-thumb">
+                        <Image size={18} />
+                        <span>{diagram.code}</span>
+                      </div>
+                      <div className="advanced-result-body">
+                        <button
+                          type="button"
+                          className="epc-link-button"
+                          onClick={() =>
+                            navigate(
+                              buildEpcPath("/epc/workbench", {
+                                vehicleId: vehicle.id,
+                                groupId: group.id,
+                                subgroupId: subgroup.id,
+                                diagramId: diagram.id,
+                                partId: part.id,
+                              }, vehicle.vin ? { vin: vehicle.vin } : undefined),
+                            )
+                          }
+                        >
+                          {part.sku}
+                        </button>
+                        <strong>{getText(locale, part.name)}</strong>
+                        <p>
+                          {getText(locale, vehicle.brand)} / {getText(locale, vehicle.series)} /{" "}
+                          {vehicle.year} / {getText(locale, vehicle.model)}
+                        </p>
+                        <small>
+                          {getText(locale, group.name)} / {getText(locale, subgroup.name)} / {diagram.code}
+                        </small>
+                      </div>
+                      <div className="advanced-result-side">
+                        <span>{part.price}</span>
+                        <button
+                          type="button"
+                          className="secondary-action epc-mini-action"
+                          onClick={() => {
+                            navigate(
+                              buildEpcPath("/epc/workbench", {
+                                vehicleId: vehicle.id,
+                                groupId: group.id,
+                                subgroupId: subgroup.id,
+                                diagramId: diagram.id,
+                                partId: part.id,
+                              }, vehicle.vin ? { vin: vehicle.vin } : undefined),
+                            );
+                            setIsAdvancedOpen(false);
+                          }}
+                        >
+                          {ui.selectedState}
+                        </button>
+                      </div>
+                    </article>
+                  ))
+                : advancedDiagramResults.map(({ vehicle, group, subgroup, diagram }) => (
+                    <article key={`${vehicle.id}-${diagram.id}`} className="advanced-result-card">
+                      <div className="advanced-result-thumb">
+                        <Image size={18} />
+                        <span>{diagram.code}</span>
+                      </div>
+                      <div className="advanced-result-body">
+                        <strong>{getText(locale, diagram.name)}</strong>
+                        <p>
+                          {getText(locale, vehicle.brand)} / {getText(locale, vehicle.series)} /{" "}
+                          {vehicle.year} / {getText(locale, vehicle.model)}
+                        </p>
+                        <small>
+                          {ui.diagramLocation}: {getText(locale, group.name)} / {getText(locale, subgroup.name)}
+                        </small>
+                      </div>
+                      <div className="advanced-result-side">
+                        <span>{diagram.parts.length} parts</span>
+                        <button
+                          type="button"
+                          className="secondary-action epc-mini-action"
+                          onClick={() => {
+                            navigate(
+                              buildEpcPath("/epc/workbench", {
+                                vehicleId: vehicle.id,
+                                groupId: group.id,
+                                subgroupId: subgroup.id,
+                                diagramId: diagram.id,
+                                partId: diagram.parts[0]?.id,
+                              }, vehicle.vin ? { vin: vehicle.vin } : undefined),
+                            );
+                            setIsAdvancedOpen(false);
+                          }}
+                        >
+                          {ui.selectedState}
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+
+              {advancedTab === "parts" && advancedPartResults.length === 0 ? (
+                <p className="advanced-empty-state">{ui.emptyResults}</p>
+              ) : null}
+              {advancedTab === "diagrams" && advancedDiagramResults.length === 0 ? (
+                <p className="advanced-empty-state">{ui.emptyResults}</p>
+              ) : null}
+            </div>
+          </aside>
         </div>
       ) : null}
     </div>
